@@ -104,42 +104,118 @@
     .sug { max-height:36dvh; }
     h1 { font-size:1.15rem; }
   }
+
+  /* ===== Visual e acessibilidade (camada final) ===== */
+  :root { --radius:14px; --shadow:0 1px 2px rgba(16,32,40,.06), 0 6px 18px rgba(16,32,40,.08); --focus:#1a5fd1; }
+  @media (prefers-color-scheme: dark) { :root { --shadow:0 1px 2px rgba(0,0,0,.35), 0 8px 22px rgba(0,0,0,.35); --focus:#8ab8ff; } }
+  html[data-fs="1"] { font-size:112.5%; } html[data-fs="2"] { font-size:125%; } html[data-fs="3"] { font-size:140%; }
+  html[data-contrast="high"] { --bg:#ffffff; --panel:#ffffff; --ink:#000000; --muted:#1f2a30; --line:#000000; --accent:#004d3d; --on-accent:#ffffff; --dest:#8a2c00; --warn:#7a2e00; --sign:#000000; --amber:#ffd23a; --focus:#0030a0; }
+  @media (prefers-color-scheme: dark) { html[data-contrast="high"] { --bg:#000000; --panel:#000000; --ink:#ffffff; --muted:#e6eef1; --line:#ffffff; --accent:#5fffd5; --on-accent:#000000; --dest:#ffb27d; --warn:#ffc58f; --sign:#000000; --amber:#ffd23a; --focus:#9cc5ff; } }
+  body { font-size:1rem; }
+  .skip { position:absolute; left:8px; top:-60px; z-index:5000; background:var(--ink); color:var(--bg); padding:10px 14px; border-radius:10px; font-weight:650; text-decoration:none; }
+  .skip:focus { top:8px; }
+  input:focus-visible, button:focus-visible, .opt:focus-visible, summary:focus-visible, a:focus-visible { outline:3px solid var(--focus); outline-offset:2px; }
+  .panel { padding:0 0 28px; background:linear-gradient(180deg, color-mix(in srgb, var(--accent) 7%, var(--panel)) 0, var(--panel) 190px); }
+  .panel > * { margin-left:18px; margin-right:18px; }
+  .brand { display:flex; align-items:center; gap:12px; margin-top:16px; }
+  .logo { flex:none; display:grid; place-items:center; width:48px; height:48px; border-radius:13px; background:var(--sign); color:var(--amber); font-weight:800; font-size:1.2rem; letter-spacing:.02em; box-shadow:var(--shadow); border:2px solid var(--amber); }
+  h1 { font-size:1.35rem; line-height:1.2; margin:0; }
+  .tagline { margin:2px 0 0; color:var(--muted); font-size:.9rem; }
+  .tools { display:flex; gap:6px; margin-top:12px; flex-wrap:wrap; }
+  .tool { min-height:36px; min-width:44px; padding:6px 12px; font-size:.84rem; border:1px solid var(--line); border-radius:999px; background:var(--panel); color:var(--ink); cursor:pointer; }
+  .tool[aria-pressed="true"] { background:var(--ink); color:var(--bg); }
+  .sub { margin:14px 18px 6px; line-height:1.5; }
+  .card-form { margin-top:12px; padding:4px 16px 16px; background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); }
+  label { display:flex; align-items:center; gap:8px; }
+  label::before { content:""; width:12px; height:12px; border-radius:50%; background:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+  label[for="d"]::before { background:var(--dest); box-shadow:0 0 0 3px color-mix(in srgb, var(--dest) 22%, transparent); }
+  input { height:50px; border-radius:12px; border:1.5px solid var(--line); background:var(--bg); transition:border-color .15s, box-shadow .15s; }
+  input:hover { border-color:var(--muted); }
+  input:focus { border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }
+  .chip { min-height:40px; font-size:.88rem; background:var(--panel); transition:background .15s, border-color .15s; }
+  .go { height:54px; margin-top:18px; border-radius:14px; background:linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 70%, #000)); box-shadow:0 6px 16px color-mix(in srgb, var(--accent) 35%, transparent); transition:transform .12s, box-shadow .12s, filter .12s; }
+  .go:hover:not(:disabled) { transform:translateY(-1px); filter:brightness(1.06); }
+  .go:active:not(:disabled) { transform:translateY(0); }
+  #msg { font-size:.92rem; margin:12px 18px 0; }
+  #res { margin-top:6px; }
+  .opt { border-radius:var(--radius); box-shadow:var(--shadow); transition:transform .12s, border-color .12s, box-shadow .12s; }
+  .opt:hover { transform:translateY(-1px); }
+  .sign { border:2px solid var(--amber); border-radius:9px; box-shadow:inset 0 0 0 2px #000; }
+  .opt p { line-height:1.45; }
+  .opt .meta, .opt .warn { font-size:.88rem; }
+  .fav { min-width:44px; min-height:44px; font-size:1.5rem; }
+  .more { min-height:46px; border-radius:12px; font-weight:600; }
+  .sg { min-height:46px; display:flex; flex-direction:column; justify-content:center; }
+  .sug { border-radius:12px; box-shadow:var(--shadow); }
+  .inst { margin:14px 18px 0; border-radius:var(--radius); }
+  .inst button { min-height:40px; }
+  .trip { min-height:40px; }
+  .disc { font-size:.82rem; line-height:1.5; }
+  footer { margin-top:26px; font-size:.85rem; line-height:1.6; }
+  footer button { font-size:.85rem; min-height:32px; }
+  footer button:hover { text-decoration:none; }
+  .panel a { text-underline-offset:2px; }
+  #map { box-shadow:inset 6px 0 14px -10px rgba(0,0,0,.35); }
+  .leaflet-container { font-family:inherit; }
+  noscript p { margin:18px; padding:12px; border:2px solid var(--warn); border-radius:12px; color:var(--warn); }
+  @media (max-width:820px) {
+    .panel { border-top-left-radius:20px; border-top-right-radius:20px; position:relative; box-shadow:0 -6px 20px rgba(0,0,0,.14); padding-top:2px; }
+    .panel > * { margin-left:14px; margin-right:14px; }
+    .brand { margin-top:14px; }
+    .logo { width:42px; height:42px; font-size:1.05rem; }
+    h1 { font-size:1.2rem; }
+    .tool { min-height:40px; }
+    .card-form { padding:2px 14px 14px; }
+    #msg { margin-left:14px; margin-right:14px; }
+    .chip, .trip { min-height:44px; }
+  }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition:none !important; animation:none !important; scroll-behavior:auto !important; } .go:hover:not(:disabled), .opt:hover { transform:none; } }
+  @media (forced-colors: active) { .opt, input, .chip, .go, .tool { border:2px solid CanvasText; } .opt.sel { outline:3px solid Highlight; } }
 </style>
 </head>
 <body>
+<a class="skip" href="#o">Pular para a busca</a>
+<noscript><p>Este site precisa de JavaScript ativado para mostrar o mapa e as linhas.</p></noscript>
 <div class="app">
-  <section class="panel">
+  <main class="panel" id="main">
     <div class="inst" id="inst" hidden><span id="inst-txt"></span><button id="inst-go" type="button">Instalar</button><button id="inst-x" type="button" aria-label="Fechar aviso">×</button></div>
-    <h1>Ônibus de João Pessoa</h1>
+    <header class="brand"><div class="logo" aria-hidden="true">JP</div><div><h1>Ônibus de João Pessoa</h1><p class="tagline">Sem anúncios. Qual linha pegar e onde subir.</p></div></header>
+    <div class="tools" role="group" aria-label="Ajustes de leitura">
+      <button class="tool" id="fs-" type="button" aria-label="Diminuir o tamanho do texto">A−</button>
+      <button class="tool" id="fs+" type="button" aria-label="Aumentar o tamanho do texto">A+</button>
+      <button class="tool" id="hc" type="button" aria-pressed="false">Alto contraste</button>
+    </div>
     <p class="sub">Diga de onde você sai e para onde vai. Mostro as linhas que passam perto dos dois pontos e onde subir e descer.</p>
+    <form class="card-form" id="form" onsubmit="return false" role="search" aria-label="Planejar trajeto">
 
     <label for="o">De onde</label>
-    <div class="f"><input id="o" autocomplete="off" placeholder="Endereço, lugar ou Casa" value="Casa"><div class="sug" id="so" role="listbox"></div></div>
+    <div class="f"><input id="o" type="search" autocomplete="off" enterkeyhint="search" placeholder="Endereço, lugar ou Casa" value="Casa" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="so"><div class="sug" id="so" role="listbox" aria-label="Sugestões de origem"></div></div>
     <div class="chips">
-      <button class="chip" id="gps" type="button">Onde estou</button>
+      <button class="chip" id="gps" type="button">📍 Onde estou</button>
       <button class="chip" id="po" type="button">Marcar no mapa</button>
     </div>
 
     <label for="d">Para onde</label>
-    <div class="f"><input id="d" autocomplete="off" placeholder="Endereço, lugar ou Casa" value="CI UFPB"><div class="sug" id="sd" role="listbox"></div></div>
+    <div class="f"><input id="d" type="search" autocomplete="off" enterkeyhint="search" placeholder="Endereço, lugar ou Casa" value="CI UFPB" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sd"><div class="sug" id="sd" role="listbox" aria-label="Sugestões de destino"></div></div>
     <div class="chips">
       <button class="chip" id="pd" type="button">Marcar no mapa</button>
-      <button class="chip" id="swap" type="button">Inverter</button>
+      <button class="chip" id="swap" type="button" aria-label="Inverter origem e destino">⇅ Inverter</button>
       <button class="chip" id="pst" type="button" title="Marque no mapa uma parada que existe na rua mas não aparece">+ Parada que falta</button>
     </div>
 
     <button class="go" id="go" type="button" disabled>Carregando linhas…</button>
+    </form>
     <p id="msg" role="status" aria-live="polite">Só demora na primeira vez: depois as linhas ficam guardadas neste navegador.</p>
 
     <div id="hist"></div>
-    <div id="res"><p class="empty">Os resultados aparecem aqui.</p></div>
+    <div id="res" role="region" aria-label="Resultados" tabindex="-1"><p class="empty">Os resultados aparecem aqui.</p></div>
 
     <footer><span id="data"></span> <button id="refresh" type="button">Atualizar dados</button> · <button id="clearman" type="button">Apagar paradas que marquei</button> · <button id="clearhist" type="button">Apagar histórico</button>
       <p class="disc"><a href="sobre.html">Sobre o projeto, autor, licença e créditos</a> · © 2026 Arthur Gabriel · <a href="mailto:gabrielarthurg81010@gmail.com?subject=%C3%94nibus%20JP">Reportar erro</a></p>
       <p class="disc">Projeto independente e gratuito, <b>sem ligação com a Semob, a NuBus ou as empresas de ônibus</b>. Trajetos e horários vêm de dados públicos da Semob e podem estar desatualizados: confira no ponto. Mapa e lugares: © colaboradores do <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> (licença ODbL). Seu histórico e seus lugares ficam só neste aparelho.</p>
     </footer>
-  </section>
-  <div id="map"></div>
+  </main>
+  <div id="map" role="region" aria-label="Mapa com os trajetos. Os mesmos resultados estão na lista ao lado."></div>
 </div>
 
 <script src="dados-semob.js"></script>
@@ -372,7 +448,8 @@ async function overpass(query, what, quiet) {
   for (const url of ENDPOINTS) {
     try {
       if (!quiet) say('Baixando ' + what + '… (até 1 minuto)');
-      const r = await fetch(url, { method: 'POST', body: 'data=' + encodeURIComponent(query), headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
+      const ac = new AbortController(); const tm = setTimeout(() => ac.abort(), 40000);   // servidor lento: desiste e tenta o próximo
+      let r; try { r = await fetch(url, { method: 'POST', body: 'data=' + encodeURIComponent(query), headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, signal: ac.signal }); } finally { clearTimeout(tm); }
       if (!r.ok) throw new Error('HTTP ' + r.status);
       return await r.json();
     } catch (e) { err = e; }
@@ -682,7 +759,7 @@ async function resolve(kind) {
 
 // ---------- Sugestões enquanto digita ----------
 const sugState = { o: { items: [], act: -1 }, d: { items: [], act: -1 } };
-function closeSug() { for (const k of ['o', 'd']) { $('s' + k).innerHTML = ''; sugState[k].items = []; sugState[k].act = -1; } }
+function closeSug() { for (const k of ['o', 'd']) { $('s' + k).innerHTML = ''; sugState[k].items = []; sugState[k].act = -1; $(k).setAttribute('aria-expanded', 'false'); $(k).removeAttribute('aria-activedescendant'); } }
 async function pick(kind, it) {
   closeSug();
   let p = it.p;
@@ -699,14 +776,16 @@ function showSug(kind, results, onlineFor) {
   const box = $('s' + kind), st = sugState[kind];
   st.items = results.map(r => r.it); st.act = -1;
   box.innerHTML = '';
+  $(kind).setAttribute('aria-expanded', 'true');
+  let n = 0;
   st.items.forEach(it => {
-    const d = document.createElement('div'); d.className = 'sg'; d.setAttribute('role', 'option');
+    const d = document.createElement('div'); d.className = 'sg'; d.setAttribute('role', 'option'); d.id = 'sg-' + kind + (n++);
     d.innerHTML = esc(it.name) + (it.kind ? '<small>' + esc(it.kind) + '</small>' : '');
     d.addEventListener('mousedown', e => { e.preventDefault(); pick(kind, it); });
     box.appendChild(d);
   });
   if (onlineFor) {                                          // última linha: procurar na internet
-    const d = document.createElement('div'); d.className = 'sg'; d.setAttribute('role', 'option');
+    const d = document.createElement('div'); d.className = 'sg'; d.setAttribute('role', 'option'); d.id = 'sg-' + kind + (n++);
     d.innerHTML = 'Procurar "' + esc(onlineFor) + '" na internet<small>Usa mapas online (precisa de conexão)</small>';
     d.addEventListener('mousedown', async e => {
       e.preventDefault(); closeSug(); say('Procurando "' + onlineFor + '" na internet…');
@@ -719,14 +798,15 @@ function showSug(kind, results, onlineFor) {
 }
 function markAct(kind) {
   const kids = $('s' + kind).children || [];
-  for (let i = 0; i < kids.length; i++) kids[i].classList.toggle('act', i === sugState[kind].act);
+  for (let i = 0; i < kids.length; i++) { kids[i].classList.toggle('act', i === sugState[kind].act); kids[i].setAttribute('aria-selected', i === sugState[kind].act); }
+  const a = kids[sugState[kind].act]; if (a) { $(kind).setAttribute('aria-activedescendant', a.id); a.scrollIntoView({ block: 'nearest' }); }
 }
 function setupSuggest(kind) {
   const inp = $(kind);
   const update = () => { const q = inp.value.trim(); if (q.length < 2) { const r = recents(6); r.length ? showSug(kind, r) : closeSug(); return; } showSug(kind, suggest(q, 6), q.length >= 3 ? q : null); };
   inp.addEventListener('input', update);
   inp.addEventListener('focus', update);
-  inp.addEventListener('blur', () => setTimeout(() => { $('s' + kind).innerHTML = ''; sugState[kind].items = []; }, 150));
+  inp.addEventListener('blur', () => setTimeout(() => { $('s' + kind).innerHTML = ''; sugState[kind].items = []; inp.setAttribute('aria-expanded', 'false'); }, 150));
   inp.addEventListener('keydown', e => {
     const st = sugState[kind];
     if (e.key === 'ArrowDown' && st.items.length) { e.preventDefault(); st.act = (st.act + 1) % st.items.length; markAct(kind); }
@@ -998,19 +1078,48 @@ function maybePlan() { if (ready && S.o.p && S.d.p) { over.clear(); selLine = nu
 $('go').onclick = go;
 for (const k of ['o', 'd']) { setupSuggest(k); $(k).addEventListener('keydown', e => { if (e.key === 'Enter' && !e.defaultPrevented) go(); }); }
 
+// ---------- Ajustes de leitura (tamanho do texto e alto contraste), lembrados neste aparelho ----------
+(function () {
+  const root = document.documentElement, KEY = 'jp-a11y-v1';
+  const st = Object.assign({ fs: 0, hc: false }, store.get(KEY, {}));
+  const apply = () => {
+    st.fs = Math.max(0, Math.min(3, st.fs | 0));
+    st.fs ? root.setAttribute('data-fs', st.fs) : root.removeAttribute('data-fs');
+    st.hc ? root.setAttribute('data-contrast', 'high') : root.removeAttribute('data-contrast');
+    $('hc').setAttribute('aria-pressed', String(!!st.hc));
+    $('fs-').disabled = st.fs <= 0; $('fs+').disabled = st.fs >= 3;
+    store.set(KEY, st);
+  };
+  $('fs-').onclick = () => { st.fs--; apply(); say('Texto menor.'); };
+  $('fs+').onclick = () => { st.fs++; apply(); say('Texto maior.'); };
+  $('hc').onclick = () => { st.hc = !st.hc; apply(); say(st.hc ? 'Alto contraste ligado.' : 'Alto contraste desligado.'); };
+  apply();
+})();
+
 // ---------- Início ----------
 async function start(force) {
   ready = false; $('go').disabled = true; $('go').textContent = 'Carregando linhas…';
   try {
     await loadRoutes();
     let note = '';
-    try { await loadStops(force); } catch (e) { stops = store.get(CACHE_S, []); note = ' As paradas não carregaram; uso só as que já estão ligadas às rotas.'; }
+    // Paradas já baixadas antes: usa na hora. Primeira visita: libera o botão já e baixa as paradas em segundo plano.
+    const cached = !force && store.get(CACHE_S, null);
+    if (cached) stops = cached; else stops = [];
+    const needStops = !cached;
     const withStops = indexAll();
     pois = store.get(CACHE_P, []) || []; pois2 = store.get(CACHE_P2, []) || []; buildIndex();
     ready = true; $('go').disabled = false; $('go').textContent = 'Ver ônibus';
     const datas = routes.map(r => r.atualizado).filter(Boolean).sort();
     $('data').textContent = 'Dados oficiais da Semob: ' + new Set(routes.map(r => r.line)).size + ' linhas (trajetos de ' + (datas[0] || '?').slice(0, 4) + ' a ' + (datas[datas.length - 1] || '?').slice(0, 4) + ')' + (semTrajeto.length ? ', ' + semTrajeto.length + ' sem trajeto publicado' : '') + ' · ' + stopsById.size + ' paradas do OpenStreetMap.';
-    say('Pronto.' + note + ' Toque em "Ver ônibus".', !!note);
+    say('Pronto.' + (needStops ? ' Baixando as paradas do mapa em segundo plano…' : '') + ' Toque em "Ver ônibus".', false);
+    if (needStops) {
+      loadStops(true).then(() => {
+        indexAll(); buildIndex();
+        $('data').textContent = $('data').textContent.replace(/\d+ paradas do OpenStreetMap/, stopsById.size + ' paradas do OpenStreetMap');
+        say('Paradas do mapa carregadas.', false);
+        if (S.o.p && S.d.p) maybePlan();
+      }).catch(() => say('As paradas do mapa não carregaram agora (servidor lento); uso as já ligadas às rotas. Toque em "Atualizar dados" para tentar de novo.', true));
+    }
     // Pontos de referência em segundo plano: a página já funciona enquanto isso.
     renderHist();
     loadPois(force).then(() => { buildIndex(); $('data').textContent += ' · ' + index.length + ' lugares para a busca.'; })
