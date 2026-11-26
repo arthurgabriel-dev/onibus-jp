@@ -1,6 +1,6 @@
 // Service worker do Ônibus JP: deixa o app abrir sem internet (a parte dos dados e do mapa base depende de rede).
 // Aumente VERSION sempre que publicar arquivos novos para o celular baixar a versão nova.
-const VERSION = 'v5';
+const VERSION = 'v3';
 const CACHE = 'onibus-jp-' + VERSION;
 const SHELL = [
   './', 'index.html', 'sobre.html', 'dados-semob.js', 'manifest.webmanifest',

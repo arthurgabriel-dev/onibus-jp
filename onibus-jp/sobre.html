@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sobre o AGBUS: objetivo, autor, licença e créditos</title>
+<meta name="description" content="Objetivo, autor, licença e fontes de dados do AGBUS, planejador de linhas de ônibus de João Pessoa.">
+<meta name="author" content="Arthur Gabriel">
+<meta name="theme-color" content="#6d28d9">
+<link rel="icon" type="image/png" href="icons/favicon.png">
+<style>
+  :root { --bg:#f6f3fb; --panel:#ffffff; --ink:#1d1330; --muted:#625775; --line:#e2daf0; --accent:#6d28d9; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#120d1c; --panel:#1b1428; --ink:#f1ecfa; --muted:#b9aed0; --line:#32254a; --accent:#b794ff; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--ink); font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; line-height:1.55; }
+  main { max-width:760px; margin:0 auto; padding:calc(24px + env(safe-area-inset-top)) 18px calc(40px + env(safe-area-inset-bottom)); }
+  a { color:var(--accent); }
+  h1 { font-size:1.5rem; margin:0 0 4px; letter-spacing:-.01em; }
+  h2 { font-size:1.05rem; margin:28px 0 6px; }
+  p, li { font-size:.98rem; }
+  .lead { color:var(--muted); margin:0 0 8px; }
+  .back { display:inline-block; margin-bottom:14px; font-size:.92rem; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
+  table { width:100%; border-collapse:collapse; font-size:.9rem; }
+  th, td { text-align:left; vertical-align:top; padding:8px 8px 8px 0; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:600; }
+  ul { padding-left:1.2rem; }
+  .small { font-size:.85rem; color:var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <a class="back" href="./">← Voltar ao planejador</a>
+  <img src="icons/agbus-logo.svg" alt="AGBUS" height="56" style="display:block;margin:0 0 10px">
+  <h1>Sobre o AGBUS</h1>
+  <p class="lead">Qual ônibus pegar em João Pessoa, onde subir e onde descer.</p>
+
+  <h2>Objetivo</h2>
+  <p>Este projeto nasceu da insatisfação do autor com o aplicativo oficial do NuBus, que, na opinião dele, é cheio de anúncios e mostra as linhas, mas deixa o passageiro sem saber onde subir e onde descer.</p>
+  <p>A ideia é ter uma alternativa simples, leve e gratuita: você diz de onde sai e para onde vai, e o site mostra as linhas que passam perto, a parada de embarque, a de desembarque, quanto andar a pé e os horários de saída do dia. <b>Esta versão não tem anúncios.</b></p>
+
+  <h2>Autor e contato</h2>
+  <div class="card">
+    <p style="margin:0"><b>Arthur Gabriel</b>, aluno de Ciência da Computação da UFPB.</p>
+    <p style="margin:6px 0 0">Encontrou um erro, uma parada fora do lugar ou uma linha que falta? Escreva para mim.</p>
+    <ul style="margin:8px 0 0;padding-left:20px"><li>E-mail: <a href="mailto:gabrielarthurg81010@gmail.com?subject=AGBUS">gabrielarthurg81010@gmail.com</a></li><li>LinkedIn: <a href="https://www.linkedin.com/in/arthur-gabriel-0991733b2/" target="_blank" rel="noopener noreferrer">linkedin.com/in/arthur-gabriel-0991733b2</a></li></ul>
+  </div>
+
+  <h2>Aviso importante</h2>
+  <p>Este é um projeto <b>independente e gratuito, sem ligação com a Semob, a NuBus ou as empresas de ônibus</b>. Os nomes citados pertencem aos seus donos e aparecem apenas para identificar a origem dos dados. Trajetos e horários vêm de dados públicos e podem estar desatualizados: confira sempre no ponto. O horário mostrado é o de saída do terminal, não o de passagem na sua parada, e não há informação em tempo real.</p>
+
+  <h2>Licença</h2>
+  <p>O código está sob a <a href="LICENSE">licença MIT</a>: qualquer pessoa pode usar, copiar e modificar, mantendo o aviso de copyright. Os dados têm licenças próprias, descritas abaixo.</p>
+
+  <h2>Fontes de dados e créditos</h2>
+  <div class="card">
+    <table>
+      <tr><th>O quê</th><th>Fonte</th></tr>
+      <tr><td>Trajetos, ruas e horários das linhas</td><td><a href="https://servicos.semobjp.pb.gov.br/linhas-de-onibus/" target="_blank" rel="noopener">Semob-JP</a> (Superintendência Executiva de Mobilidade Urbana de João Pessoa), dados públicos coletados em 26/11/2026.</td></tr>
+      <tr><td>Mapa, paradas e pontos de referência</td><td>© colaboradores do <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a>, disponível sob a <a href="https://opendatacommons.org/licenses/odbl/" target="_blank" rel="noopener">licença ODbL</a>.</td></tr>
+      <tr><td>Busca de endereços</td><td>Nominatim e Photon, serviços baseados em dados do OpenStreetMap.</td></tr>
+      <tr><td>Biblioteca de mapas</td><td><a href="https://leafletjs.com" target="_blank" rel="noopener">Leaflet</a> 1.9.4, licença BSD-2-Clause.</td></tr>
+    </table>
+    <p class="small" style="margin:10px 0 0">A Semob não publica a posição das paradas. Por isso o embarque usa paradas do OpenStreetMap quando existem e, senão, um ponto aproximado na rua. Você pode corrigir tocando nas paradas do mapa.</p>
+  </div>
+
+  <h2>Privacidade</h2>
+  <p>Não há conta nem servidor do projeto. O histórico, os lugares e as paradas que você marca ficam <b>só no seu aparelho</b> e podem ser apagados no rodapé do planejador. Para mostrar o mapa, buscar endereços e lugares, o navegador consulta serviços do OpenStreetMap, que recebem o seu endereço de IP e o que você pesquisa. A posição do aparelho só é lida se você tocar em "Onde estou".</p>
+  <p class="small">Código-fonte: <a href="https://github.com/arthurgabriel-dev/onibus-jp" target="_blank" rel="noopener">github.com/arthurgabriel-dev/onibus-jp</a><br>© 2026 Arthur Gabriel</p>
+</main>
+</body>
+</html>

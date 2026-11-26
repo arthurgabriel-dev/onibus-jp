@@ -2,6 +2,8 @@
 
 **Qual ônibus pegar em João Pessoa?** Diga de onde você sai e para onde vai. O site mostra as linhas que passam perto dos dois pontos, **onde subir**, **onde descer**, quanto andar a pé e os horários de saída do dia.
 
+**Acesse:** <https://arthurgabriel-dev.github.io/onibus-jp/>
+
 Funciona no navegador e pode ser **instalado no celular** como app (iPhone e Android), sem loja de aplicativos.
 
 > **Projeto independente e gratuito, sem ligação com a Semob, a NuBus ou as empresas de ônibus.** Trajetos e horários vêm de dados públicos e podem estar desatualizados. Confira sempre no ponto.
@@ -29,16 +31,7 @@ Erros, paradas fora do lugar ou linhas que faltam: <gabrielarthurg81010@gmail.co
 - **Android (Chrome/Edge):** abra o site e toque em **Instalar** na faixa verde (ou menu ⋮ → *Instalar app*).
 - **iPhone/iPad (Safari):** abra o site, toque em **Compartilhar** (quadrado com seta) → **Adicionar à Tela de Início**. O iOS não oferece botão de instalar; esse é o caminho oficial.
 
-O app abre em tela cheia, com ícone próprio. Os arquivos ficam guardados no aparelho; o mapa, as buscas de endereço e a localização dos lugares precisam de internet.
-
-## Publicar na internet (GitHub Pages, grátis)
-
-1. Crie um repositório **vazio** no GitHub (por exemplo `onibus-jp`).
-2. Envie **o conteúdo desta pasta** para a raiz do repositório (pelo site: *Add file → Upload files*; ou por `git`).
-3. No repositório: **Settings → Pages → Build and deployment → Deploy from a branch → `main` / `(root)` → Save**.
-4. Em cerca de 1 minuto o site abre em `https://SEU-USUARIO.github.io/onibus-jp/`. Esse endereço usa **https**, necessário para a localização e para instalar como app.
-
-Ao publicar uma versão nova, aumente `VERSION` em `sw.js` para os celulares baixarem os arquivos novos.
+O app abre em tela cheia, com ícone próprio. Os arquivos do app ficam guardados no aparelho; o mapa, a busca de endereços e as paradas do OpenStreetMap precisam de internet.
 
 ## Rodar no seu computador
 
@@ -95,7 +88,14 @@ icons/                  ícones do app
 lib/leaflet/            biblioteca de mapas
 dados/                  dados organizados (JSON e CSV)
 tools/                  scripts para atualizar os dados
+docs/                   guia de publicação
 ```
+
+## Colaborar
+
+Achou uma parada fora do lugar, uma linha que falta ou um erro? Abra uma *issue* na aba **Issues** deste repositório ou escreva para <gabrielarthurg81010@gmail.com>. Se você sabe onde ficam paradas que não aparecem no mapa, cadastre-as também no [OpenStreetMap](https://www.openstreetmap.org): isso melhora este projeto e todos os outros que usam o mesmo mapa.
+
+Quer publicar sua própria cópia? Veja [docs/PUBLICAR.md](docs/PUBLICAR.md).
 
 ## Licença
 
