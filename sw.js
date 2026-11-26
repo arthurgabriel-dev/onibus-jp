@@ -1,13 +1,13 @@
-// Service worker do Ônibus JP: deixa o app abrir sem internet (a parte dos dados e do mapa base depende de rede).
+// Service worker do AGBUS: deixa o app abrir sem internet (a parte dos dados e do mapa base depende de rede).
 // Aumente VERSION sempre que publicar arquivos novos para o celular baixar a versão nova.
-const VERSION = 'v3';
+const VERSION = 'v9';
 const CACHE = 'onibus-jp-' + VERSION;
 const SHELL = [
   './', 'index.html', 'sobre.html', 'dados-semob.js', 'manifest.webmanifest',
   'lib/leaflet/leaflet.js', 'lib/leaflet/leaflet.css',
   'lib/leaflet/images/layers.png', 'lib/leaflet/images/layers-2x.png',
   'lib/leaflet/images/marker-icon.png', 'lib/leaflet/images/marker-icon-2x.png', 'lib/leaflet/images/marker-shadow.png',
-  'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'icons/favicon.png'
+  'icons/icon-192.png', 'icons/icon-512.png', 'icons/apple-touch-icon.png', 'icons/favicon.png', 'icons/agbus-icone.svg'
 ];
 
 self.addEventListener('install', e => {

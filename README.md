@@ -1,4 +1,6 @@
-# Ônibus JP
+<p align="center"><img src="icons/agbus-logo.svg" alt="AGBUS" height="90"></p>
+
+# AGBUS
 
 **Qual ônibus pegar em João Pessoa?** Diga de onde você sai e para onde vai. O site mostra as linhas que passam perto dos dois pontos, **onde subir**, **onde descer**, quanto andar a pé e os horários de saída do dia.
 
@@ -15,7 +17,11 @@ O projeto nasceu da insatisfação do autor com o aplicativo oficial do NuBus, q
 ## Autor e contato
 
 **Arthur Gabriel**, aluno de Ciência da Computação da UFPB.
-Erros, paradas fora do lugar ou linhas que faltam: <gabrielarthurg81010@gmail.com> ou a aba *Issues* deste repositório.
+
+- E-mail: <gabrielarthurg81010@gmail.com>
+- LinkedIn: <https://www.linkedin.com/in/arthur-gabriel-0991733b2/>
+
+Erros, paradas fora do lugar ou linhas que faltam: escreva por e-mail ou abra uma *issue* na aba **Issues** deste repositório.
 
 ## O que faz
 
