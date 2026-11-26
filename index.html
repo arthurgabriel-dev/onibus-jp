@@ -1,0 +1,1059 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ônibus JP: qual linha pegar em João Pessoa</title>
+<meta name="description" content="Diga de onde você sai e para onde vai: mostra as linhas de ônibus de João Pessoa, onde subir e descer. Projeto independente, não oficial.">
+<meta name="author" content="Arthur Gabriel">
+<meta name="theme-color" content="#16232a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/favicon.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Ônibus JP">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="stylesheet" href="lib/leaflet/leaflet.css">
+<script src="lib/leaflet/leaflet.js"></script>
+<style>
+  :root {
+    --bg:#f3f5f6; --panel:#ffffff; --ink:#14232b; --muted:#5d6e76; --line:#dbe2e5;
+    --accent:#0d7c66; --on-accent:#ffffff; --dest:#c4501b; --sign:#1b1d21; --amber:#ffb400; --warn:#a14a12;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#101a1f; --panel:#16232a; --ink:#e8eff2; --muted:#9fb1b9; --line:#26363e;
+      --accent:#3cc9a6; --on-accent:#06231c; --dest:#f08a55; --sign:#0b0d10; --amber:#ffbe1a; --warn:#f0a66b; }
+  }
+  * { box-sizing:border-box; }
+  html, body { height:100%; margin:0; }
+  body { font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:var(--ink); line-height:1.4; }
+  .app { display:grid; grid-template-columns:410px 1fr; height:100dvh; }
+  .panel { background:var(--panel); overflow-y:auto; padding:18px 18px 28px; border-right:1px solid var(--line); }
+  #map { height:100%; min-height:260px; background:#dfe5e8; }
+  #map.marking { cursor:crosshair; }
+  h1 { font-size:1.3rem; margin:0 0 2px; letter-spacing:-.01em; }
+  .sub { margin:0 0 14px; color:var(--muted); font-size:.92rem; }
+  label { display:block; font-weight:600; font-size:.9rem; margin:12px 0 5px; }
+  input { width:100%; height:46px; padding:0 12px; font-size:1rem; color:var(--ink); background:var(--bg); border:1px solid var(--line); border-radius:10px; }
+  input:focus-visible, button:focus-visible, .opt:focus-visible, summary:focus-visible { outline:3px solid var(--accent); outline-offset:2px; }
+  .chips { display:flex; gap:8px; margin-top:7px; flex-wrap:wrap; }
+  .chip { background:transparent; color:var(--ink); border:1px solid var(--line); border-radius:999px; padding:7px 13px; font-size:.86rem; cursor:pointer; }
+  .chip:hover, .chip.on { border-color:var(--accent); color:var(--accent); }
+  .chip.on { background:color-mix(in srgb, var(--accent) 12%, transparent); }
+  .go { width:100%; height:50px; margin-top:16px; background:var(--accent); color:var(--on-accent); border:0; border-radius:12px; font-size:1.05rem; font-weight:650; cursor:pointer; }
+  .go:disabled { opacity:.55; cursor:wait; }
+  #msg { min-height:1.3em; margin:10px 0 0; font-size:.88rem; color:var(--muted); }
+  #msg.err { color:var(--warn); }
+  #res h2 { font-size:.95rem; margin:20px 0 9px; }
+  .empty { color:var(--muted); font-size:.92rem; margin-top:18px; }
+  .opt { display:grid; grid-template-columns:auto 1fr auto; gap:12px; align-items:start; padding:12px; margin-bottom:10px; border:1px solid var(--line); border-radius:12px; cursor:pointer; background:var(--panel); }
+  .opt:hover { border-color:var(--muted); }
+  .opt.sel { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent); }
+  .sign { min-width:4.1rem; padding:.45rem .6rem; text-align:center; background:var(--sign); color:var(--amber); font-size:1.4rem; font-weight:800; font-variant-numeric:tabular-nums; letter-spacing:.03em; border-radius:7px; }
+  .opt p { margin:0 0 5px; font-size:.92rem; }
+  .opt .meta { color:var(--muted); font-size:.84rem; }
+  .opt .warn { color:var(--warn); font-size:.84rem; }
+  .opt small, .st { color:var(--muted); }
+  .fav { background:none; border:0; font-size:1.4rem; line-height:1; cursor:pointer; color:var(--muted); padding:2px 4px; }
+  .fav[aria-pressed="true"] { color:var(--amber); }
+  .more { width:100%; height:42px; margin-top:4px; background:transparent; color:var(--accent); border:1px solid var(--line); border-radius:10px; cursor:pointer; font-size:.92rem; }
+  details { margin-top:18px; border-top:1px solid var(--line); padding-top:12px; }
+  summary { cursor:pointer; font-weight:600; font-size:.92rem; }
+  .stop { padding:9px 2px; border-bottom:1px solid var(--line); cursor:pointer; font-size:.9rem; }
+  .stop small { display:block; color:var(--muted); }
+  .note { font-size:.85rem; color:var(--muted); margin:8px 0; }
+  footer { margin-top:24px; font-size:.8rem; color:var(--muted); }
+  footer button { background:none; border:0; color:var(--accent); text-decoration:underline; cursor:pointer; font-size:.8rem; padding:0; }
+  .pin { display:grid; place-items:center; width:46px; height:28px; border-radius:14px; border:3px solid #fff; color:#fff; font-weight:700; font-size:.78rem; box-shadow:0 1px 5px rgba(0,0,0,.4); }
+  .pin.o { background:#0d7c66; } .pin.d { background:#c4501b; }
+  .f { position:relative; }
+  .sug { position:absolute; left:0; right:0; top:100%; margin-top:4px; z-index:2000; background:var(--panel); border:1px solid var(--line); border-radius:10px; box-shadow:0 6px 20px rgba(0,0,0,.25); max-height:300px; overflow-y:auto; }
+  .sug:empty { display:none; }
+  .sg { padding:9px 12px; cursor:pointer; font-size:.93rem; border-bottom:1px solid var(--line); }
+  .sg:last-child { border-bottom:0; }
+  .sg.act, .sg:hover { background:color-mix(in srgb, var(--accent) 14%, transparent); }
+  .sg small { display:block; color:var(--muted); font-size:.78rem; }
+  .pp { font-size:.88rem; min-width:190px; }
+  .pp b { display:block; margin-bottom:2px; }
+  .pp small { display:block; color:#5d6e76; margin-bottom:6px; }
+  .pp button { margin:2px 4px 0 0; padding:6px 10px; border-radius:8px; border:1px solid #0d7c66; background:#0d7c66; color:#fff; cursor:pointer; font-size:.84rem; }
+  .pp button.d { border-color:#c4501b; background:#c4501b; }
+  .inst { display:flex; align-items:center; gap:8px; margin:0 0 14px; padding:10px 12px; border:1px solid var(--accent); border-radius:12px; background:color-mix(in srgb, var(--accent) 12%, transparent); font-size:.86rem; }
+  .inst[hidden] { display:none; }
+  .inst span { flex:1; }
+  .inst button { border:0; border-radius:8px; padding:8px 12px; cursor:pointer; font-size:.86rem; }
+  #inst-go { background:var(--accent); color:var(--on-accent); font-weight:650; }
+  #inst-x { background:transparent; color:var(--muted); font-size:1.2rem; line-height:1; padding:4px 8px; }
+  #hist { margin-top:14px; }
+  #hist:empty { display:none; }
+  #hist h2 { font-size:.85rem; color:var(--muted); font-weight:600; margin:0 0 6px; }
+  .trip { display:inline-block; margin:0 6px 6px 0; padding:7px 12px; border:1px solid var(--line); border-radius:999px; background:transparent; color:var(--ink); font-size:.86rem; cursor:pointer; }
+  .trip:hover { border-color:var(--accent); color:var(--accent); }
+  .tag { display:inline-block; margin-left:6px; padding:1px 7px; border-radius:999px; font-size:.72rem; color:var(--accent); border:1px solid var(--accent); }
+  .disc { margin:10px 0 0; font-size:.76rem; color:var(--muted); }
+  .panel a { color:var(--accent); }
+  html { -webkit-text-size-adjust:100%; }
+  button, .opt, .sg { -webkit-tap-highlight-color:transparent; }
+  .panel { overscroll-behavior:contain; }
+  @media (max-width:820px) {
+    .app { grid-template-columns:1fr; grid-template-rows:38dvh 1fr; padding-top:env(safe-area-inset-top); background:var(--panel); }
+    #map { order:-1; } .panel { border-right:0; border-top:1px solid var(--line); padding:14px 14px calc(26px + env(safe-area-inset-bottom)); }
+    .chip { padding:9px 14px; } .trip { padding:9px 14px; }
+    .pp button { padding:10px 14px; font-size:.92rem; }
+    .sug { max-height:36dvh; }
+    h1 { font-size:1.15rem; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <section class="panel">
+    <div class="inst" id="inst" hidden><span id="inst-txt"></span><button id="inst-go" type="button">Instalar</button><button id="inst-x" type="button" aria-label="Fechar aviso">×</button></div>
+    <h1>Ônibus de João Pessoa</h1>
+    <p class="sub">Diga de onde você sai e para onde vai. Mostro as linhas que passam perto dos dois pontos e onde subir e descer.</p>
+
+    <label for="o">De onde</label>
+    <div class="f"><input id="o" autocomplete="off" placeholder="Endereço, lugar ou Casa" value="Casa"><div class="sug" id="so" role="listbox"></div></div>
+    <div class="chips">
+      <button class="chip" id="gps" type="button">Onde estou</button>
+      <button class="chip" id="po" type="button">Marcar no mapa</button>
+    </div>
+
+    <label for="d">Para onde</label>
+    <div class="f"><input id="d" autocomplete="off" placeholder="Endereço, lugar ou Casa" value="CI UFPB"><div class="sug" id="sd" role="listbox"></div></div>
+    <div class="chips">
+      <button class="chip" id="pd" type="button">Marcar no mapa</button>
+      <button class="chip" id="swap" type="button">Inverter</button>
+      <button class="chip" id="pst" type="button" title="Marque no mapa uma parada que existe na rua mas não aparece">+ Parada que falta</button>
+    </div>
+
+    <button class="go" id="go" type="button" disabled>Carregando linhas…</button>
+    <p id="msg" role="status" aria-live="polite">Só demora na primeira vez: depois as linhas ficam guardadas neste navegador.</p>
+
+    <div id="hist"></div>
+    <div id="res"><p class="empty">Os resultados aparecem aqui.</p></div>
+
+    <footer><span id="data"></span> <button id="refresh" type="button">Atualizar dados</button> · <button id="clearman" type="button">Apagar paradas que marquei</button> · <button id="clearhist" type="button">Apagar histórico</button>
+      <p class="disc"><a href="sobre.html">Sobre o projeto, autor, licença e créditos</a> · © 2026 Arthur Gabriel · <a href="mailto:gabrielarthurg81010@gmail.com?subject=%C3%94nibus%20JP">Reportar erro</a></p>
+      <p class="disc">Projeto independente e gratuito, <b>sem ligação com a Semob, a NuBus ou as empresas de ônibus</b>. Trajetos e horários vêm de dados públicos da Semob e podem estar desatualizados: confira no ponto. Mapa e lugares: © colaboradores do <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> (licença ODbL). Seu histórico e seus lugares ficam só neste aparelho.</p>
+    </footer>
+  </section>
+  <div id="map"></div>
+</div>
+
+<script src="dados-semob.js"></script>
+<script>
+// ==PURE==
+const R = 6371000, rad = x => x * Math.PI / 180;
+function dist(a, b) {
+  const dl = rad(b[0] - a[0]), dn = rad(b[1] - a[1]);
+  const h = Math.sin(dl / 2) ** 2 + Math.cos(rad(a[0])) * Math.cos(rad(b[0])) * Math.sin(dn / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+function nearest(pts, p) {
+  let bi = 0, bd = 1e12;
+  for (let i = 0; i < pts.length; i++) { const x = dist(pts[i], p); if (x < bd) { bd = x; bi = i; } }
+  return [bi, bd];
+}
+// Junta os trechos (ways) da relação em uma única linha, na ordem de circulação.
+function chain(ways) {
+  const out = [];
+  ways.forEach(w => {
+    let seg = w;
+    if (out.length) {
+      const last = out[out.length - 1];
+      if (dist(last, w[0]) > dist(last, w[w.length - 1])) seg = w.slice().reverse();
+    } else if (ways.length > 1) {
+      const n = ways[1];
+      const e = Math.min(dist(w[w.length - 1], n[0]), dist(w[w.length - 1], n[n.length - 1]));
+      const s = Math.min(dist(w[0], n[0]), dist(w[0], n[n.length - 1]));
+      if (s < e) seg = w.slice().reverse();
+    }
+    for (const p of seg) out.push(p);
+  });
+  return out;
+}
+// Acrescenta pontos intermediários (a cada ~25 m) para achar paradas com precisão.
+function densify(pts, step) {
+  if (!pts.length) return pts;
+  const out = [pts[0]];
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1], b = pts[i], d = dist(a, b);
+    // Trechos retos longos são normais no OSM; saltos acima de 600 m são lacunas entre ways e não se interpolam.
+    if (d > step && d < 600) {
+      const n = Math.ceil(d / step);
+      for (let k = 1; k < n; k++) out.push([a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n]);
+    }
+    out.push(b);
+  }
+  return out;
+}
+const GRID = 0.0004; // ~44 m
+// Paradas que ficam a até maxD metros do trajeto, ordenadas pela posição ao longo dele.
+function matchStops(pts, stops, maxD) {
+  const grid = new Map();
+  pts.forEach((p, i) => {
+    const k = Math.floor(p[0] / GRID) + ',' + Math.floor(p[1] / GRID);
+    if (!grid.has(k)) grid.set(k, []);
+    grid.get(k).push(i);
+  });
+  const found = [];
+  for (const s of stops) {
+    const cy = Math.floor(s.p[0] / GRID), cx = Math.floor(s.p[1] / GRID);
+    let bi = -1, bd = 1e12;
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+      const arr = grid.get((cy + dy) + ',' + (cx + dx));
+      if (!arr) continue;
+      for (const i of arr) { const d = dist(pts[i], s.p); if (d < bd) { bd = d; bi = i; } }
+    }
+    if (bi >= 0 && bd <= maxD) found.push({ s, idx: bi });
+  }
+  found.sort((a, b) => a.idx - b.idx);
+  return found;
+}
+// Escolhe embarque e desembarque. Usa paradas cadastradas, mas, como o mapa tem muitas paradas faltando,
+// também considera o ponto mais próximo do trajeto (aproximado). A parada real só perde se obrigar
+// a caminhar mais de APPROX_PENALTY metros além do ponto aproximado.
+const APPROX_PENALTY = 150;
+function chooseStops(dpts, on, o, d) {
+  const [i1, w1] = nearest(dpts, o), [i2, w2] = nearest(dpts, d);
+  const B = on.map(x => ({ idx: x.idx, p: x.s.p, s: x.s, approx: false, w: dist(o, x.s.p) }));
+  const A = on.map(x => ({ idx: x.idx, p: x.s.p, s: x.s, approx: false, w: dist(d, x.s.p) }));
+  B.push({ idx: i1, p: dpts[i1], s: null, approx: true, w: w1 });
+  A.push({ idx: i2, p: dpts[i2], s: null, approx: true, w: w2 });
+  const cost = c => c.w + (c.approx ? APPROX_PENALTY : 0);
+  let minB = B[0], minA = A[0], best = null;
+  for (const b of B) if (cost(b) < cost(minB)) minB = b;
+  for (const a of A) if (cost(a) < cost(minA)) minA = a;
+  for (const b of B) for (const a of A) {
+    if (a.idx <= b.idx) continue;
+    const c = cost(b) + cost(a);
+    if (!best || c < best.cost) best = { b, a, cost: c };
+  }
+  const free = cost(minB) + cost(minA);
+  if (!best) return { b: minB, a: minA, cost: free, free, ok: false, nstops: 0 };
+  best.free = free;
+  best.ok = best.cost - free <= 300;
+  best.nstops = on.filter(x => x.idx > best.b.idx && x.idx <= best.a.idx).length;
+  return best;
+}
+// ==/PURE==
+
+// ==SEARCH==
+// Busca de lugares tolerante a erros: ignora acento, maiúsculas e pontuação, aceita nome incompleto,
+// abreviações e até 1–2 letras erradas. Funciona só no navegador, sem consultar servidor a cada letra.
+const STOPW = new Set(['de', 'da', 'do', 'dos', 'das', 'e', 'em', 'na', 'no', 'a', 'o']);
+const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+const EXPAND = { av: 'avenida', r: 'rua', dr: 'doutor', dra: 'doutora', pca: 'praca', pc: 'praca', tv: 'travessa', jd: 'jardim', cj: 'conjunto', sta: 'santa', sto: 'santo' };
+const ALIAS = { ufpb: 'universidade federal paraiba', hu: 'hospital universitario', ci: 'centro informatica', ifpb: 'instituto federal paraiba', uepb: 'universidade estadual paraiba', lyceu: 'lyceu paraibano', aeroporto: 'aeroporto', rodoviaria: 'rodoviaria' };
+function qtokens(q) {
+  const out = [];
+  for (const w0 of norm(q).split(' ').filter(Boolean)) {
+    const w = EXPAND[w0] || w0;
+    if (ALIAS[w]) out.push(...ALIAS[w].split(' ')); else out.push(w);
+  }
+  const f = out.filter(w => !STOPW.has(w));
+  return f.length ? f : out;
+}
+function lev(a, b, max) {
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i]; let min = i;
+    for (let j = 1; j <= b.length; j++) {
+      const v = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      cur.push(v); if (v < min) min = v;
+    }
+    if (min > max) return max + 1;
+    prev = cur;
+  }
+  return prev[b.length];
+}
+// Pontuação de uma palavra digitada (q) contra uma palavra do nome (t). 0 = não combina.
+function tokScore(q, t, last) {
+  if (t === q) return 3;
+  if (t.startsWith(q) && (last || q.length >= 3)) return 2.4;
+  if (q.length >= 4) {
+    const tol = q.length >= 8 ? 2 : 1;
+    if (lev(q, t, tol) <= tol) return 2;
+    if (last && t.length > q.length && lev(q, t.slice(0, q.length), tol) <= tol) return 1.7;
+  }
+  if (q.length >= 3 && t.includes(q)) return 1;
+  return 0;
+}
+function searchIndex(index, query, limit) {
+  const qs = qtokens(query);
+  if (!qs.length) return [];
+  const joined = qs.join(' '), res = [];
+  for (const it of index) {
+    let sum = 0, ok = true;
+    for (let i = 0; i < qs.length; i++) {
+      let best = 0;
+      for (const t of it.tk) { const s = tokScore(qs[i], t, i === qs.length - 1); if (s > best) best = s; if (best === 3) break; }
+      if (!best) { ok = false; break; }
+      sum += best;
+    }
+    if (!ok) continue;
+    let sc = sum / qs.length - Math.max(0, it.tk.length - qs.length) * 0.04;
+    if (it.n.startsWith(joined)) sc += 0.5;
+    res.push({ it, sc: sc + (it.w || 0) });
+  }
+  res.sort((a, b) => b.sc - a.sc);
+  return res.slice(0, limit);
+}
+const mkItem = (name, p, kind, w) => { const n = norm(name); return { name, n, tk: n.split(' ').filter(Boolean), p, kind, w: w || 0 }; };
+// ==/SEARCH==
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const fmt = m => m < 1000 ? Math.round(m) + ' m' : (m / 1000).toFixed(1).replace('.', ',') + ' km';
+const lineSort = (a, b) => a.localeCompare(b, 'pt', { numeric: true });
+const store = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+
+// ---------- Mapa ----------
+const map = L.map('map', { zoomControl: true }).setView([-7.12, -34.855], 13);
+const web = location.protocol === 'http:' || location.protocol === 'https:';
+// Páginas abertas direto do arquivo não podem usar o mapa padrão do OSM (ele bloqueia); aqui usamos outro só para testes.
+L.tileLayer(web ? 'https://tile.openstreetmap.org/{z}/{x}/{y}.png' : 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+  maxZoom: 19, attribution: web ? '&copy; <a href="https://www.openstreetmap.org/copyright">Contribuidores do OpenStreetMap</a>' : 'Tiles &copy; Esri'
+}).addTo(map);
+const draw = L.layerGroup().addTo(map), nearLayer = L.layerGroup().addTo(map);
+
+// ---------- Estado ----------
+let semTrajeto = [], routes = [], stops = [], stopsById = new Map(), ready = false, pending = false, mode = null, selLine = null, shown = 6;
+const DEFAULT_PLACES = {
+  casa: { label: 'Casa', q: 'Rua Radialista Antônio Assunção de Jesus, 50, João Pessoa', p: null },
+  ci: { label: 'CI UFPB', q: 'Centro de Informática UFPB, João Pessoa', p: null },
+  campus: { label: 'UFPB Campus I', q: 'Universidade Federal da Paraíba, Campus I, João Pessoa', p: null }
+};
+const places = Object.assign({}, DEFAULT_PLACES);
+for (const [k, v] of Object.entries(store.get('jp-places-v2', {}))) if (places[k]) places[k].p = v;
+const savePlaces = () => store.set('jp-places-v2', Object.fromEntries(Object.entries(places).filter(([, v]) => v.p).map(([k, v]) => [k, v.p])));
+const favs = new Set(store.get('jp-favs', ['304']));
+const MAN_KEY = 'jp-manual-v1';
+let manual = store.get(MAN_KEY, []);           // [{id, p:[lat,lon], name, lines:[...]}]
+const saveManual = () => store.set(MAN_KEY, manual);
+const over = new Map();                         // troca de parada nesta consulta: 'idDaRota|b' ou '|a' -> parada
+const S = { o: { p: null, resolved: '' }, d: { p: null, resolved: '' } };
+const M = { o: null, d: null };
+
+const say = (t, err) => { $('msg').textContent = t; $('msg').className = err ? 'err' : ''; };
+const keyFor = text => { const t = text.trim().toLowerCase(); return Object.keys(places).find(k => places[k].label.toLowerCase() === t) || null; };
+
+// ---------- Nome de rua (sob demanda, 1 pedido por segundo no máximo) ----------
+const streets = new Map(); let qchain = Promise.resolve();
+function streetOf(p) {
+  const k = p[0].toFixed(4) + ',' + p[1].toFixed(4);
+  if (streets.has(k)) return streets.get(k);
+  const pr = qchain.then(async () => {
+    try {
+      const r = await fetch('https://nominatim.openstreetmap.org/reverse?format=json&zoom=17&lat=' + p[0] + '&lon=' + p[1]);
+      const a = (await r.json()).address || {};
+      return a.road || a.pedestrian || a.footway || '';
+    } catch (e) { return ''; }
+  });
+  qchain = pr.then(() => new Promise(res => setTimeout(res, 1100)));
+  streets.set(k, pr);
+  return pr;
+}
+
+// ---------- Dados (OpenStreetMap) ----------
+const BBOX = '(-7.26,-34.99,-7.04,-34.78)';
+const ENDPOINTS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
+const SQUERY = '[out:json][timeout:90];(node["highway"="bus_stop"]' + BBOX + ';node["public_transport"="platform"]["bus"="yes"]' + BBOX + ';node["public_transport"="stop_position"]["bus"="yes"]' + BBOX + ';);out;';
+const CACHE_S = 'jp-stops-v2';
+
+async function overpass(query, what, quiet) {
+  let err;
+  for (const url of ENDPOINTS) {
+    try {
+      if (!quiet) say('Baixando ' + what + '… (até 1 minuto)');
+      const r = await fetch(url, { method: 'POST', body: 'data=' + encodeURIComponent(query), headers: { 'Content-Type': 'application/x-www-form-urlencoded' } });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return await r.json();
+    } catch (e) { err = e; }
+  }
+  throw err;
+}
+// ---------- Pontos de referência para a busca ----------
+// Lista 1: marcos da cidade. Lista 2: comércio e serviços (baixada depois, em segundo plano).
+// Tudo é baixado uma vez e guardado no navegador; as sugestões não consultam servidor a cada letra.
+const AMEN = 'university|college|hospital|clinic|bus_station|marketplace|townhall|courthouse|library|theatre|cinema|police|school';
+const PQUERY = '[out:json][timeout:90];(' +
+  'nwr["name"]["amenity"~"^(' + AMEN + ')$"]' + BBOX + ';' +
+  'nwr["name"]["shop"~"^(mall|supermarket|department_store)$"]' + BBOX + ';' +
+  'nwr["name"]["tourism"~"^(attraction|museum|hotel|viewpoint|zoo)$"]' + BBOX + ';' +
+  'nwr["name"]["leisure"~"^(park|stadium|sports_centre)$"]' + BBOX + ';' +
+  'nwr["name"]["railway"="station"]' + BBOX + ';nwr["name"]["aeroway"="aerodrome"]' + BBOX + ';nwr["name"]["natural"="beach"]' + BBOX + ';' +
+  'nwr["name"]["place"~"^(suburb|neighbourhood|quarter|village|town)$"]' + BBOX + ';nwr["name"]["office"="government"]' + BBOX + ';' +
+  'nwr["name"]["building"="university"]' + BBOX + ';);out center tags qt;';
+const AMEN2 = 'bank|pharmacy|post_office|place_of_worship|community_centre|restaurant|cafe|fast_food|fuel|dentist|doctors|kindergarten|pub|bar';
+const PQUERY2 = '[out:json][timeout:120];(' +
+  'nwr["name"]["amenity"~"^(' + AMEN2 + ')$"]' + BBOX + ';' +
+  'nwr["name"]["shop"]' + BBOX + ';nwr["name"]["leisure"="fitness_centre"]' + BBOX + ';' +
+  ');out center tags qt;';
+const CACHE_P = 'jp-pois-v1', CACHE_P2 = 'jp-pois2-v1';
+const KIND = { university: 'Universidade', college: 'Faculdade', hospital: 'Hospital', clinic: 'Clínica', bus_station: 'Terminal', marketplace: 'Mercado', townhall: 'Prefeitura', courthouse: 'Fórum', library: 'Biblioteca', theatre: 'Teatro', cinema: 'Cinema', police: 'Delegacia', school: 'Escola', mall: 'Shopping', supermarket: 'Supermercado', department_store: 'Loja', attraction: 'Ponto turístico', museum: 'Museu', hotel: 'Hotel', viewpoint: 'Mirante', zoo: 'Zoológico', park: 'Parque', stadium: 'Estádio', sports_centre: 'Centro esportivo', station: 'Estação', aerodrome: 'Aeroporto', beach: 'Praia', suburb: 'Bairro', neighbourhood: 'Bairro', quarter: 'Bairro', village: 'Localidade', town: 'Cidade', government: 'Órgão público',
+  bank: 'Banco', pharmacy: 'Farmácia', post_office: 'Correios', place_of_worship: 'Igreja/templo', community_centre: 'Centro comunitário', restaurant: 'Restaurante', cafe: 'Café', fast_food: 'Lanchonete', fuel: 'Posto', dentist: 'Dentista', doctors: 'Consultório', kindergarten: 'Creche', pub: 'Bar', bar: 'Bar', fitness_centre: 'Academia' };
+const KIND_W = { Universidade: .25, Hospital: .2, Shopping: .2, Terminal: .25, Bairro: .15, Aeroporto: .2, Praia: .1, Parque: .1, Faculdade: .1 };
+// Lugares conhecidos que o mapa livre costuma não ter: endereço confirmado em fontes públicas; a posição é achada pelo endereço.
+const SEED = [
+  { name: 'Casa NuBus', q: 'Avenida Getúlio Vargas, 137, Centro, João Pessoa', kind: 'Atendimento NuBus (cartão e recarga)' },
+  { name: 'Rodoviária de João Pessoa', q: 'Rua Francisco Londres, Varadouro, João Pessoa', kind: 'Rodoviária' },
+  { name: 'Terminal de Integração do Bessa', q: 'Rua Paulo Roberto de Souza Acioly, 1353, Bessa, João Pessoa', kind: 'Terminal' },
+  { name: 'Centro Cultural Casa da Pólvora', q: 'Ladeira São Francisco, 152, Centro, João Pessoa', kind: 'Cultura' },
+  { name: 'Casarão dos Azulejos', q: 'Rua Conselheiro Henrique, 159, Centro, João Pessoa', kind: 'Cultura' },
+  { name: 'Fundação Casa de José Américo', q: 'Avenida Cabo Branco, 3336, Cabo Branco, João Pessoa', kind: 'Cultura' },
+  { name: 'Aquário Paraíba', q: 'Rua das Lagostas, 140, Ponta do Seixas, João Pessoa', kind: 'Passeio' }
+];
+let pois = [], pois2 = [], index = [];
+async function fetchSet(cacheKey, query, force) {
+  let c = force ? null : store.get(cacheKey, null);
+  if (c) return c;
+  const data = await overpass(query, 'os lugares', true);
+  c = []; const seen = new Set();
+  for (const e of data.elements || []) {
+    const t = e.tags || {}, name = t.name;
+    const lat = e.lat != null ? e.lat : e.center && e.center.lat, lon = e.lon != null ? e.lon : e.center && e.center.lon;
+    if (!name || lat == null || lon == null) continue;
+    const k = t.amenity || t.shop || t.tourism || t.leisure || t.railway || t.aeroway || t.natural || t.place || (t.office && 'government') || t.building;
+    const key = norm(name) + '|' + lat.toFixed(3) + '|' + lon.toFixed(3);
+    if (seen.has(key)) continue; seen.add(key);
+    c.push([name, +(+lat).toFixed(5), +(+lon).toFixed(5), KIND[k] || (t.shop ? 'Loja' : 'Lugar')]);
+  }
+  store.set(cacheKey, c);
+  return c;
+}
+async function loadPois(force) { pois = await fetchSet(CACHE_P, PQUERY, force); }
+async function loadPois2(force) { pois2 = await fetchSet(CACHE_P2, PQUERY2, force); }
+// Junta lugares do OpenStreetMap, os terminais (início/fim de linha) dos dados da Semob e os lugares conhecidos.
+function buildIndex() {
+  const seen = new Set(), out = [];
+  const add = (name, p, kind, w, q) => {
+    const k = norm(name) + '|' + (p ? p[0].toFixed(3) + '|' + p[1].toFixed(3) : q);
+    if (!name || seen.has(k)) return; seen.add(k);
+    const it = mkItem(name, p, kind, w); if (q) it.q = q; out.push(it);
+  };
+  for (const sd of SEED) add(sd.name, null, sd.kind, .3, sd.q);
+  for (const [n, la, lo, kind] of pois) add(n, [la, lo], kind, KIND_W[kind] || 0);
+  for (const r of routes) {
+    for (const [nm, pt] of [[r.de, r.pts[0]], [r.para, r.pts[r.pts.length - 1]]]) {
+      if (nm && pt && /terminal|integracao|estacao|rodoviaria/.test(norm(nm))) add(nm, pt, 'Terminal (fim de linha)', .2);
+    }
+  }
+  for (const [n, la, lo, kind] of pois2) add(n, [la, lo], kind, 0);
+  index = out;
+}
+
+// ---------- Histórico (fica só neste aparelho) ----------
+const HIST_KEY = 'jp-hist-v1';
+let hist = store.get(HIST_KEY, null) || { places: {}, routes: {} };
+const saveHist = () => store.set(HIST_KEY, hist);
+const hkey = (name, p) => norm(name) + '|' + p[0].toFixed(3) + '|' + p[1].toFixed(3);
+const histScore = h => Math.log2(1 + h.n) + Math.max(0, 1 - (Date.now() - h.last) / (30 * 864e5));   // uso + recência (30 dias)
+const GPS = 'Minha localização';
+function rememberPlace(name, p, kind) {
+  if (!name || !p || name === GPS || /^\(ponto no mapa\)$/.test(name)) return;
+  const k = hkey(name, p), h = hist.places[k] || { name, p, kind: kind || 'Recente', n: 0 };
+  h.n++; h.last = Date.now(); h.p = p; hist.places[k] = h;
+  const ks = Object.keys(hist.places);
+  if (ks.length > 80) { ks.sort((a, b) => histScore(hist.places[a]) - histScore(hist.places[b])); for (const x of ks.slice(0, ks.length - 80)) delete hist.places[x]; }
+}
+const endKey = (name, p) => name === GPS ? 'gps' : hkey(name, p);
+const tripKey = () => endKey($('o').value.trim(), S.o.p) + '>' + endKey($('d').value.trim(), S.d.p);
+function recordTrip() {
+  const on = $('o').value.trim(), dn = $('d').value.trim();
+  if (!S.o.p || !S.d.p || !on || !dn || /^\(ponto no mapa\)$/.test(on) || /^\(ponto no mapa\)$/.test(dn)) return;
+  rememberPlace(on, S.o.p); rememberPlace(dn, S.d.p);
+  const k = tripKey(), t = hist.routes[k] || { o: { name: on, p: on === GPS ? null : S.o.p }, d: { name: dn, p: S.d.p }, n: 0, lines: {} };
+  t.n++; t.last = Date.now(); hist.routes[k] = t;
+  const ks = Object.keys(hist.routes);
+  if (ks.length > 30) { ks.sort((a, b) => histScore(hist.routes[a]) - histScore(hist.routes[b])); for (const x of ks.slice(0, ks.length - 30)) delete hist.routes[x]; }
+  saveHist(); renderHist();
+}
+function recordPick(line) {
+  const t = hist.routes[tripKey()]; if (!t) return;
+  t.lines[line] = (t.lines[line] || 0) + 1; saveHist();
+}
+const linePref = () => (hist.routes[tripKey()] || {}).lines || {};
+function renderHist() {
+  const box = $('hist'); box.innerHTML = '';
+  const ts = Object.values(hist.routes).sort((a, b) => histScore(b) - histScore(a)).slice(0, 4);
+  if (!ts.length) return;
+  const h = document.createElement('h2'); h.textContent = 'Seus trajetos'; box.appendChild(h);
+  for (const t of ts) {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'trip'; b.textContent = t.o.name + ' → ' + t.d.name;
+    b.onclick = () => {
+      $('d').value = t.d.name; setPoint('d', t.d.p, t.d.name);
+      if (t.o.p) { $('o').value = t.o.name; setPoint('o', t.o.p, t.o.name); maybePlan(); }
+      else { $('o').value = GPS; S.o.p = null; $('gps').click(); }     // origem "Minha localização": pega a posição de agora
+    };
+    box.appendChild(b);
+  }
+}
+const histItems = () => Object.values(hist.places).map(h => mkItem(h.name, h.p, h.kind || 'Recente', Math.min(.7, .18 * histScore(h))));
+function recents(limit) {
+  const items = Object.values(hist.places).sort((a, b) => histScore(b) - histScore(a)).slice(0, limit).map(h => ({ it: mkItem(h.name, h.p, 'Recente'), sc: 1 }));
+  const saved = savedItems().map(it => ({ it, sc: 2 }));
+  const seen = new Set(), out = [];
+  for (const r of saved.concat(items)) { const k = norm(r.it.name); if (seen.has(k)) continue; seen.add(k); out.push(r); }
+  return out.slice(0, limit);
+}
+
+const savedItems = () => Object.entries(places).map(([k, v]) => mkItem(v.label, v.p, 'Seu lugar', 1));
+function suggest(q, limit) {
+  const lim = limit || 6;
+  const res = searchIndex(savedItems().concat(histItems(), index), q, lim * 3), seen = new Set(), out = [];
+  for (const r of res) {                                   // tira repetidos (mesmo nome e lugar no histórico e no mapa)
+    const k = norm(r.it.name); if (seen.has(k)) continue; seen.add(k); out.push(r);
+    if (out.length >= lim) break;
+  }
+  return out;
+}
+// Trajetos oficiais da Semob (arquivo dados-semob.js, coletado de servicos.semobjp.pb.gov.br)
+const SMALL = new Set(['de', 'da', 'do', 'dos', 'das', 'e', 'em']);
+const ACENTOS = { integracao: 'Integração', praca: 'Praça', antonio: 'Antônio', jose: 'José', joao: 'João', conceicao: 'Conceição', bancarios: 'Bancários', ipes: 'Ipês', epitacio: 'Epitácio', cabo: 'Cabo', sao: 'São', jaguaribe: 'Jaguaribe', varadouro: 'Varadouro' };
+const pretty = t => String(t || '').toLowerCase().split(/\s+/).filter(Boolean).map((w, i) => (i && SMALL.has(w)) ? w : (ACENTOS[w] || w.charAt(0).toUpperCase() + w.slice(1))).join(' ');
+async function loadRoutes() {
+  const data = window.SEMOB_DATA;
+  if (!data || !data.linhas) throw new Error('o arquivo dados-semob.js precisa ficar na mesma pasta desta página');
+  routes = []; semTrajeto = [];
+  for (const l of data.linhas) {
+    if (!l.sentidos.length) { semTrajeto.push(l.numero); continue; }
+    const tab = Object.values(l.ruas)[0] || {};
+    for (const sd of l.sentidos) {
+      const ruas = tab[sd.sentido] || [];
+      routes.push({ id: l.codigo + sd.sentido, line: l.numero, name: pretty(l.nome), sentido: sd.sentido,
+        de: pretty(ruas[0]), para: pretty(ruas[ruas.length - 1]), pts: sd.coords, ms: [],
+        horarios: l.horarios, atualizado: l.atualizado_em });
+    }
+  }
+}
+function scheduleText(r) {
+  const now = new Date(), dow = now.getDay();
+  const key = dow === 0 ? 'Domingo' : dow === 6 ? 'Sábado' : 'Dia útil';
+  const h = r.horarios && r.horarios[key];
+  if (!h || !h.partidas.length) return 'Sem horário publicado para hoje (' + key.toLowerCase() + ').';
+  const hhmm = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+  const prox = h.partidas.filter(t => t >= hhmm).slice(0, 3);
+  return 'Hoje (' + key.toLowerCase() + '): ' + h.partidas.length + ' saídas, de ' + h.partidas[0] + ' a ' + h.partidas[h.partidas.length - 1] + '. ' +
+    (prox.length ? 'Próximas saídas do terminal: ' + prox.join(' · ') : 'Sem mais saídas hoje.');
+}
+async function loadStops(force) {
+  const c = force ? null : store.get(CACHE_S, null);
+  if (c) { stops = c; return; }
+  const data = await overpass(SQUERY, 'as paradas');
+  stops = data.elements.filter(e => e.type === 'node' && e.lat != null).map(e => ({ id: e.id, p: [+e.lat.toFixed(5), +e.lon.toFixed(5)], name: (e.tags && (e.tags.name || e.tags.ref)) || '' }));
+  store.set(CACHE_S, stops);
+}
+// Associa as paradas às linhas que passam por elas.
+function indexAll() {
+  stopsById = new Map(stops.map(s => [s.id, { id: s.id, p: s.p, name: s.name, lines: new Set() }]));
+  for (const r of routes) for (const [id, lat, lon] of r.ms || []) if (!stopsById.has(id)) stopsById.set(id, { id, p: [lat, lon], name: '', lines: new Set() });
+  // Paradas marcadas por você (ficam só neste navegador).
+  for (const m of manual) if (m.osm == null) stopsById.set(m.id, { id: m.id, p: m.p, name: m.name || 'Parada marcada por você', lines: new Set(), manual: true });
+  const all = [...stopsById.values()];
+  let withStops = 0;
+  for (const r of routes) {
+    r.dpts = densify(r.pts, 25);
+    // O trajeto oficial é aproximado; por isso a tolerância é de 50 m em vez de 35 m.
+    const on = matchStops(r.dpts, all, 50);
+    const have = new Set(on.map(x => x.s.id));
+    for (const [id] of r.ms || []) {
+      if (have.has(id)) continue;
+      const s = stopsById.get(id);
+      on.push({ s, idx: nearest(r.dpts, s.p)[0] });
+    }
+    // Ligações que você confirmou: "a linha X para nesta parada", mesmo fora da tolerância.
+    for (const m of manual) {
+      const st = stopsById.get(m.osm != null ? m.osm : m.id);
+      if (!st || !(m.lines || []).includes(r.line) || on.some(x => x.s.id === st.id)) continue;
+      const [ni, nd] = nearest(r.dpts, st.p);
+      if (nd <= 250) on.push({ s: st, idx: ni });
+    }
+    on.sort((a, b) => a.idx - b.idx);
+    r.on = on;
+    on.forEach(x => x.s.lines.add(r.line));
+    if (on.length) withStops++;
+  }
+  return withStops;
+}
+
+// ---------- Pontos de origem e destino ----------
+const GEO_KEY = 'jp-geo-v1';
+const geoCache = store.get(GEO_KEY, {});
+async function geocode(q) {
+  const ck = norm(q);
+  if (geoCache[ck]) return geoCache[ck];                    // endereço já achado antes: não consulta de novo
+  const box = '&viewbox=-34.99,-7.04,-34.78,-7.26&bounded=1';
+  for (const query of [q, q.replace(/,\s*\d+/, '')]) {
+    const r = await fetch('https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br' + box + '&q=' + encodeURIComponent(query));
+    const j = await r.json();
+    if (j[0]) { const p = [+(+j[0].lat).toFixed(5), +(+j[0].lon).toFixed(5)]; geoCache[ck] = p; store.set(GEO_KEY, geoCache); return p; }
+  }
+  return null;
+}
+// Posição de um lugar da lista (os de endereço conhecido, como a Casa NuBus, são achados pelo endereço).
+async function placeCoords(it) {
+  if (it.p) return it.p;
+  if (it.q) { const p = await geocode(it.q); if (p) { it.p = p; return p; } }
+  return null;
+}
+// Busca na internet quando a lista local não resolve (só quando você pede ou quando nada foi achado; nunca a cada letra).
+const inBox = p => p[0] < -7.04 && p[0] > -7.26 && p[1] > -34.99 && p[1] < -34.78;
+async function onlineSearch(text, photonOnly) {
+  const out = [], seen = new Set();
+  const add = (name, p, kind) => { if (!name || !p || !inBox(p)) return; const k = norm(name) + '|' + p[0].toFixed(3) + '|' + p[1].toFixed(3); if (seen.has(k)) return; seen.add(k); out.push(mkItem(name, p, kind || '')); };
+  if (!photonOnly) {
+    try {
+      const r = await fetch('https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&countrycodes=br&viewbox=-34.99,-7.04,-34.78,-7.26&bounded=1&q=' + encodeURIComponent(text));
+      for (const j of await r.json()) add((j.name || String(j.display_name).split(',')[0]), [+j.lat, +j.lon], String(j.display_name).split(',').slice(1, 3).join(',').trim());
+    } catch (e) {}
+  }
+  try {                                                    // Photon (OpenStreetMap): tolera erro de digitação
+    const r = await fetch('https://photon.komoot.io/api/?limit=8&lat=-7.12&lon=-34.86&q=' + encodeURIComponent(text));
+    for (const f of (await r.json()).features || []) {
+      const pr = f.properties || {}, c = f.geometry && f.geometry.coordinates;
+      if (!c) continue;
+      const nm = pr.name || [pr.street, pr.housenumber].filter(Boolean).join(', ');
+      add(nm, [c[1], c[0]], [pr.street && pr.name ? pr.street : '', pr.district || pr.locality || '', pr.city || ''].filter(Boolean).join(', '));
+    }
+  } catch (e) {}
+  return out;
+}
+function setPoint(kind, p, text) {
+  if (text != null) $(kind).value = text;
+  const s = S[kind]; s.p = p; s.resolved = $(kind).value.trim();
+  const key = keyFor(s.resolved);
+  if (key) { places[key].p = p; savePlaces(); }
+  if (!M[kind]) {
+    M[kind] = L.marker(p, { draggable: true, icon: L.divIcon({ className: '', html: '<div class="pin ' + kind + '">' + (kind === 'o' ? 'De' : 'Para') + '</div>', iconSize: [46, 28], iconAnchor: [23, 14] }) }).addTo(map);
+    M[kind].on('dragend', () => {
+      const ll = M[kind].getLatLng();
+      setPoint(kind, [ll.lat, ll.lng], keyFor($(kind).value) ? null : '(ponto no mapa)');
+      maybePlan();
+    });
+  } else M[kind].setLatLng(p);
+}
+async function resolve(kind) {
+  const text = $(kind).value.trim(), s = S[kind];
+  if (!text) { say('Preencha ' + (kind === 'o' ? '"De onde"' : '"Para onde"') + ' ou marque o ponto no mapa.', true); return false; }
+  if (s.p && s.resolved === text) return true;
+  const key = keyFor(text);
+  if (key && places[key].p) { setPoint(kind, places[key].p, places[key].label); return true; }
+  closeSug();
+  // Endereço com número ou começando por rua/avenida vai direto ao buscador de endereços; o resto procura primeiro nos pontos de referência.
+  const isAddr = /\d/.test(text) || /^(rua|r|avenida|av|travessa|tv|alameda|estrada|rodovia|br)\b/.test(norm(text));
+  if (!isAddr && !key) {
+    const hit = suggest(text, 1)[0];
+    if (hit && hit.sc >= 1.9) {
+      const hp = await placeCoords(hit.it);
+      if (hp) { setPoint(kind, hp, hit.it.name); rememberPlace(hit.it.name, hp, hit.it.kind); say('Usando: ' + hit.it.name + (hit.it.kind ? ' (' + hit.it.kind + ')' : '') + '.'); return true; }
+    }
+  }
+  const q = key ? places[key].q : text + ', João Pessoa';
+  const p = await geocode(q);
+  if (!p && isAddr && !key) {                       // endereço não achado: tenta como lugar
+    const hit = suggest(text, 1)[0];
+    if (hit && hit.sc >= 1.9) {
+      const hp = await placeCoords(hit.it);
+      if (hp) { setPoint(kind, hp, hit.it.name); say('Usando: ' + hit.it.name + '.'); return true; }
+    }
+  }
+  if (!p) {
+    say('Procurando "' + text + '" na internet…');
+    const on = await onlineSearch(text, true);               // só o Photon: o buscador de endereços já foi tentado
+    const alt = suggest(text, 4).map(a => a.it);
+    const all = on.concat(alt.filter(a => !on.some(o => norm(o.name) === norm(a.name)))).slice(0, 6);
+    if (all.length) {
+      showSug(kind, all.map(it => ({ it, sc: 1 })));
+      say('Não achei "' + text + '" exatamente. Escolha uma opção abaixo do campo, ou marque no mapa.', true);
+    } else { startMark(kind, true); say('Não achei "' + text + '". Toque no mapa para marcar o ponto.', true); }
+    return false;
+  }
+  setPoint(kind, p, text);
+  rememberPlace(text, p);
+  return true;
+}
+
+// ---------- Sugestões enquanto digita ----------
+const sugState = { o: { items: [], act: -1 }, d: { items: [], act: -1 } };
+function closeSug() { for (const k of ['o', 'd']) { $('s' + k).innerHTML = ''; sugState[k].items = []; sugState[k].act = -1; } }
+async function pick(kind, it) {
+  closeSug();
+  let p = it.p;
+  if (!p && it.q) { say('Procurando ' + it.name + '…'); p = await placeCoords(it); }
+  if (p) {
+    setPoint(kind, p, it.name);
+    rememberPlace(it.name, p, it.kind);
+    map.setView(p, Math.max(map.getZoom(), 15));
+    say('Local escolhido: ' + it.name + '.');
+    if (S.o.p && S.d.p) maybePlan();
+  } else { $(kind).value = it.name; say('Não consegui achar a posição de ' + it.name + '. Marque no mapa.', true); }
+}
+function showSug(kind, results, onlineFor) {
+  const box = $('s' + kind), st = sugState[kind];
+  st.items = results.map(r => r.it); st.act = -1;
+  box.innerHTML = '';
+  st.items.forEach(it => {
+    const d = document.createElement('div'); d.className = 'sg'; d.setAttribute('role', 'option');
+    d.innerHTML = esc(it.name) + (it.kind ? '<small>' + esc(it.kind) + '</small>' : '');
+    d.addEventListener('mousedown', e => { e.preventDefault(); pick(kind, it); });
+    box.appendChild(d);
+  });
+  if (onlineFor) {                                          // última linha: procurar na internet
+    const d = document.createElement('div'); d.className = 'sg'; d.setAttribute('role', 'option');
+    d.innerHTML = 'Procurar "' + esc(onlineFor) + '" na internet<small>Usa mapas online (precisa de conexão)</small>';
+    d.addEventListener('mousedown', async e => {
+      e.preventDefault(); closeSug(); say('Procurando "' + onlineFor + '" na internet…');
+      const on = await onlineSearch(onlineFor);
+      if (on.length) { showSug(kind, on.map(it => ({ it, sc: 1 }))); say('Escolha uma das opções abaixo do campo.'); }
+      else say('Não achei "' + onlineFor + '" na internet. Tente outro nome ou marque no mapa.', true);
+    });
+    box.appendChild(d);
+  }
+}
+function markAct(kind) {
+  const kids = $('s' + kind).children || [];
+  for (let i = 0; i < kids.length; i++) kids[i].classList.toggle('act', i === sugState[kind].act);
+}
+function setupSuggest(kind) {
+  const inp = $(kind);
+  const update = () => { const q = inp.value.trim(); if (q.length < 2) { const r = recents(6); r.length ? showSug(kind, r) : closeSug(); return; } showSug(kind, suggest(q, 6), q.length >= 3 ? q : null); };
+  inp.addEventListener('input', update);
+  inp.addEventListener('focus', update);
+  inp.addEventListener('blur', () => setTimeout(() => { $('s' + kind).innerHTML = ''; sugState[kind].items = []; }, 150));
+  inp.addEventListener('keydown', e => {
+    const st = sugState[kind];
+    if (e.key === 'ArrowDown' && st.items.length) { e.preventDefault(); st.act = (st.act + 1) % st.items.length; markAct(kind); }
+    else if (e.key === 'ArrowUp' && st.items.length) { e.preventDefault(); st.act = (st.act - 1 + st.items.length) % st.items.length; markAct(kind); }
+    else if (e.key === 'Enter' && st.act >= 0) { e.preventDefault(); pick(kind, st.items[st.act]); }
+    else if (e.key === 'Escape') closeSug();
+  });
+}
+function startMark(kind, force) {
+  mode = (mode === kind && !force) ? null : kind;
+  $('po').classList.toggle('on', mode === 'o'); $('pd').classList.toggle('on', mode === 'd'); $('pst').classList.toggle('on', mode === 's');
+  $('map').classList.toggle('marking', !!mode);
+  if (mode) say(mode === 's' ? 'Toque no mapa exatamente onde fica a parada que falta.' : 'Toque no mapa para marcar ' + (mode === 'o' ? 'de onde você sai' : 'para onde você vai') + '.');
+}
+map.on('click', e => {
+  if (!mode) return;
+  const kind = mode;
+  startMark(kind);
+  if (kind === 's') {
+    const m = { id: 'm' + Date.now(), p: [+e.latlng.lat.toFixed(5), +e.latlng.lng.toFixed(5)], name: 'Parada marcada por você', lines: [] };
+    manual.push(m); saveManual();
+    indexAll();
+    say('Parada salva neste navegador. Ela passa a valer para todas as linhas que passam a até 50 m dela.');
+    if (ready && S.o.p && S.d.p) { const keep = selLine; plan(); selLine = keep; }
+    return;
+  }
+  setPoint(kind, [e.latlng.lat, e.latlng.lng], keyFor($(kind).value) ? null : '(ponto no mapa)');
+  say('Ponto marcado. Arraste o pino se precisar ajustar.');
+  maybePlan();
+});
+$('po').onclick = () => startMark('o');
+$('pd').onclick = () => startMark('d');
+$('pst').onclick = () => startMark('s');
+$('clearhist').onclick = () => {
+  hist = { places: {}, routes: {} }; saveHist(); renderHist();
+  for (const k of Object.keys(geoCache)) delete geoCache[k]; store.set(GEO_KEY, geoCache);
+  say('Histórico apagado deste aparelho.');
+};
+$('clearman').onclick = () => {
+  if (!manual.length) { say('Você ainda não marcou nenhuma parada.'); return; }
+  manual = []; saveManual(); over.clear(); indexAll();
+  say('Paradas que você marcou foram apagadas.');
+  if (ready && S.o.p && S.d.p) plan();
+};
+$('swap').onclick = () => {
+  const a = $('o').value, b = $('d').value, pa = S.o.p, pb = S.d.p;
+  $('o').value = b; $('d').value = a;
+  S.o.p = null; S.d.p = null; S.o.resolved = ''; S.d.resolved = '';
+  if (pb) setPoint('o', pb, b);
+  if (pa) setPoint('d', pa, a);
+  maybePlan();
+};
+$('gps').onclick = () => {
+  if (!navigator.geolocation) { say('Este navegador não informa a localização. Use "Marcar no mapa".', true); return; }
+  say('Pegando a sua localização… (se o navegador perguntar, clique em Permitir)');
+  const ok = pos => {
+    setPoint('o', [pos.coords.latitude, pos.coords.longitude], 'Minha localização');
+    map.setView(S.o.p, 15);
+    const m = Math.round(pos.coords.accuracy || 0);
+    say('Localização encontrada' + (m ? ' (precisão de ~' + m + ' m)' : '') + '. Arraste o pino se precisar ajustar.');
+    maybePlan();
+  };
+  const fail = e => {
+    const file = location.protocol === 'file:';
+    let msg;
+    if (e && e.code === 1) {
+      msg = 'A localização está bloqueada para esta página. No Edge, clique no cadeado ao lado do endereço → Permissões → Localização → Permitir, e recarregue.' +
+        (file ? ' Como a página está aberta direto do arquivo, o Edge pode bloquear sempre: publique no GitHub Pages ou abra por um servidor local (veja o README).' : '');
+    } else if (e && e.code === 2) {
+      msg = 'O Windows não conseguiu determinar a posição. Ative em Configurações → Privacidade e segurança → Localização (serviços de localização e acesso do Edge).';
+    } else {
+      msg = 'Demorou demais para obter a localização.';
+    }
+    say(msg + ' Alternativas: digite o endereço em "Origem" ou use "Marcar no mapa".', true);
+  };
+  // 1ª tentativa: rápida (Wi‑Fi/rede). 2ª: alta precisão (GPS) se a primeira falhar por tempo.
+  navigator.geolocation.getCurrentPosition(ok, e => {
+    if (e && e.code === 1) return fail(e);
+    say('Tentando com mais precisão…');
+    navigator.geolocation.getCurrentPosition(ok, fail, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+  }, { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 });
+};
+
+// ---------- Resultados ----------
+const stopLabel = (s, approx) => approx ? 'ponto da rua, sem parada cadastrada' : (s && s.name) || 'parada (sem nome no mapa)';
+
+const stopAt = (r, s, ref) => ({ idx: nearest(r.dpts, s.p)[0], p: s.p, s, approx: false, w: dist(ref, s.p) });
+function evaluate(r) {
+  const c = chooseStops(r.dpts, r.on, S.o.p, S.d.p);
+  let b = c.b, a = c.a, ok = c.ok, nstops = c.nstops, score = c.cost;
+  const ob = over.get(r.id + '|b'), oa = over.get(r.id + '|a');
+  if (ob || oa) {
+    if (ob) b = stopAt(r, ob, S.o.p);
+    if (oa) a = stopAt(r, oa, S.d.p);
+    ok = a.idx > b.idx;
+    nstops = r.on.filter(y => y.idx > b.idx && y.idx <= a.idx).length;
+    score = b.w + a.w + (b.approx ? APPROX_PENALTY : 0) + (a.approx ? APPROX_PENALTY : 0);
+  }
+  const x = { r, b, a, ok, nstops, score };
+  x.do_ = b.w; x.dd = a.w;
+  return x;
+}
+
+// Registra que a linha para nesta parada (guardado só neste navegador).
+function linkStop(s, line) {
+  let m = manual.find(k => (k.osm != null ? k.osm : k.id) === s.id);
+  if (!m) { m = { id: 'l' + s.id, p: s.p, name: s.name || '', lines: [] }; if (!s.manual) m.osm = s.id; else m.id = s.id; manual.push(m); }
+  if (!m.lines.includes(line)) m.lines.push(line);
+  saveManual();
+}
+function popupFor(s, x) {
+  const div = document.createElement('div'); div.className = 'pp';
+  const lines = [...s.lines].sort(lineSort).join(', ') || 'nenhuma ligada a esta parada no mapa';
+  div.innerHTML = '<b>' + esc(stopLabel(s, false)) + '</b><small>Linhas: ' + esc(lines) + '<br>' + fmt(dist(S.o.p, s.p)) + ' da origem · ' + fmt(dist(S.d.p, s.p)) + ' do destino</small>';
+  const apply = kind => {
+    const [idx, nd] = nearest(x.r.dpts, s.p);
+    if (nd > 150) { say('Essa parada fica a ' + fmt(nd) + ' do trajeto da linha ' + x.r.line + '. Escolha outra mais perto do trajeto.', true); return; }
+    if (kind === 'b' ? idx >= x.a.idx : idx <= x.b.idx) { say('Nesse sentido da linha ' + x.r.line + ', essa parada fica do lado errado (depois do desembarque ou antes do embarque).', true); return; }
+    const was = s.lines.has(x.r.line);
+    if (!was) linkStop(s, x.r.line);
+    const sid = s.id;
+    if (!was) indexAll();
+    over.set(x.r.id + '|' + kind, stopsById.get(sid) || s);
+    selLine = x.r.line;
+    plan();
+    say((kind === 'b' ? 'Embarque' : 'Desembarque') + ' trocado para esta parada.' + (was ? '' : ' Guardei neste navegador que a linha ' + x.r.line + ' passa aqui.'));
+  };
+  const b1 = document.createElement('button'); b1.type = 'button'; b1.textContent = 'Subir aqui'; b1.onclick = () => apply('b');
+  const b2 = document.createElement('button'); b2.type = 'button'; b2.className = 'd'; b2.textContent = 'Descer aqui'; b2.onclick = () => apply('a');
+  div.append(b1, b2);
+  return div;
+}
+
+function stopHtml(verb, c, walkTxt) {
+  const ll = c.p[0].toFixed(5) + ',' + c.p[1].toFixed(5);
+  return '<p><b>' + verb + '</b> ' + (c.approx ? 'na rua' : 'em <b>' + esc(stopLabel(c.s, false)) + '</b>') +
+    ' <span class="st" data-ll="' + ll + '"></span> <small>(' + walkTxt + ')</small></p>';
+}
+function fillStreets(root) {
+  root.querySelectorAll('.st').forEach(sp => {
+    const [la, lo] = sp.dataset.ll.split(',').map(Number);
+    streetOf([la, lo]).then(t => { if (t) sp.textContent = (sp.parentNode.textContent.includes('na rua') ? '' : 'na ') + t; });
+  });
+}
+
+function show(x, el) {
+  document.querySelectorAll('.opt.sel').forEach(i => i.classList.remove('sel'));
+  if (el) el.classList.add('sel');
+  selLine = x.r.line;
+  draw.clearLayers();
+  const p = x.r.dpts;
+  L.polyline(p, { color: '#7d8b91', weight: 3, opacity: .5 }).addTo(draw);
+  L.polyline(p.slice(x.b.idx, x.a.idx + 1), { color: '#0d7c66', weight: 6, opacity: .95 }).addTo(draw);
+  const onIds = new Set(x.r.on.map(y => y.s.id));
+  // Outras paradas até 300 m da origem ou do destino (fora do trajeto oficial): cinza, clicáveis.
+  for (const s of stopsById.values()) {
+    if (onIds.has(s.id) || (dist(s.p, S.o.p) > 300 && dist(s.p, S.d.p) > 300)) continue;
+    L.circleMarker(s.p, { radius: 6, color: '#7d8b91', weight: 2, fillColor: '#fff', fillOpacity: 1 })
+      .bindTooltip(stopLabel(s, false) + ' (fora do trajeto oficial da ' + x.r.line + ')')
+      .bindPopup(() => popupFor(s, x)).addTo(draw);
+  }
+  for (const s of x.r.on) {
+    L.circleMarker(s.s.p, { radius: 6, color: '#fff', weight: 1.5, fillColor: '#33415c', fillOpacity: .95 })
+      .bindTooltip(stopLabel(s.s, false) + ' · linhas: ' + ([...s.s.lines].sort(lineSort).join(', ') || '—'))
+      .bindPopup(() => popupFor(s.s, x)).addTo(draw);
+  }
+  L.polyline([S.o.p, x.b.p], { color: '#0d7c66', weight: 3, dashArray: '4 6' }).addTo(draw);
+  L.polyline([x.a.p, S.d.p], { color: '#c4501b', weight: 3, dashArray: '4 6' }).addTo(draw);
+  const mk = (c, color, text) => {
+    const m = L.circleMarker(c.p, { radius: 9, color: '#fff', fillColor: color, fillOpacity: 1, weight: 3 }).bindTooltip(text, { permanent: true, direction: 'top', offset: [0, -8] }).addTo(draw);
+    streetOf(c.p).then(t => { if (t && draw.hasLayer(m)) m.setTooltipContent(text + ' · ' + t); });
+  };
+  mk(x.b, '#0d7c66', 'Suba aqui');
+  mk(x.a, '#c4501b', 'Desça aqui');
+  map.fitBounds(L.latLngBounds([S.o.p, S.d.p, x.b.p, x.a.p]), { padding: [70, 70] });
+}
+
+function card(x) {
+  const el = document.createElement('article');
+  el.className = 'opt'; el.tabIndex = 0;
+  const total = x.do_ + x.dd, min = Math.max(1, Math.round(total / 75));
+  const warns = [];
+  if (x.b.approx || x.a.approx) warns.push('O mapa não tem parada cadastrada neste trecho. Procure o ponto de ônibus mais próximo, na rua indicada.');
+  const ano = +String(x.r.atualizado || '').slice(0, 4);
+  if (ano && ano <= 2022) warns.push('O trajeto oficial desta linha foi atualizado pela Semob em ' + ano + ' e pode ter mudado. A linha desenhada é aproximada e pode não seguir o sentido das ruas.');
+  if (!x.ok) warns.push('Pode estar no sentido contrário. Procure a outra direção da mesma linha.');
+  if (x.do_ > 800 || x.dd > 800) warns.push('Caminhada longa: confira o trajeto no mapa.');
+  el.innerHTML =
+    '<div class="sign">' + esc(x.r.line) + '</div>' +
+    '<div><p class="meta">' + esc(x.r.name) + (x.r.para ? ' · sentido <b>' + esc(x.r.para) + '</b>' : '') + ((linePref()[x.r.line] || 0) > 0 ? '<span class="tag">você costuma pegar</span>' : '') + '</p>' + stopHtml('Suba', x.b, fmt(x.do_) + ' a pé') + stopHtml('Desça', x.a, fmt(x.dd) + ' a pé até o destino') +
+    '<p class="meta">Caminhada total ' + fmt(total) + ' (cerca de ' + min + ' min)' + (x.nstops ? ' · ' + x.nstops + ' paradas de ônibus' : '') + '</p>' +
+    '<p class="meta">' + esc(scheduleText(x.r)) + '</p>' +
+    warns.map(w => '<p class="warn">' + esc(w) + '</p>').join('') + '</div>' +
+    '<button class="fav" type="button" aria-label="Marcar a linha ' + esc(x.r.line) + ' como favorita" aria-pressed="' + favs.has(x.r.line) + '" title="Linha favorita">★</button>';
+  el.onclick = () => { recordPick(x.r.line); show(x, el); };
+  el.onkeydown = e => { if ((e.key === 'Enter' || e.key === ' ') && e.target === el) { e.preventDefault(); recordPick(x.r.line); show(x, el); } };
+  el.querySelector('.fav').onclick = e => {
+    e.stopPropagation();
+    favs.has(x.r.line) ? favs.delete(x.r.line) : favs.add(x.r.line);
+    store.set('jp-favs', [...favs]);
+    e.currentTarget.setAttribute('aria-pressed', favs.has(x.r.line));
+  };
+  fillStreets(el);
+  return el;
+}
+
+function nearStops(p, n) {
+  return [...stopsById.values()].map(s => ({ s, d: dist(s.p, p) })).sort((a, b) => a.d - b.d).slice(0, n);
+}
+
+function plan(rec) {
+  const box = $('res'); box.innerHTML = ''; nearLayer.clearLayers();
+  if (rec) recordTrip();
+  const pref = linePref(), bonus = x => Math.min(3, pref[x.r.line] || 0) * 80;   // cada vez que você escolheu a linha neste trajeto: -80 m na ordenação (máx. 240 m)
+  const byLine = new Map();
+  for (const x of routes.map(evaluate)) {
+    const cur = byLine.get(x.r.line);
+    if (!cur || (x.ok && !cur.ok) || (x.ok === cur.ok && x.score < cur.score)) byLine.set(x.r.line, x);
+  }
+  const all = [...byLine.values()];
+  let list = all.filter(x => x.ok && x.do_ <= 1500 && x.dd <= 1500).sort((a, b) => (a.score - bonus(a)) - (b.score - bonus(b)));
+  if (!list.length) list = all.sort((a, b) => a.score - b.score).slice(0, 5);
+
+  const h = document.createElement('h2'); h.textContent = 'Linhas com menos caminhada'; box.appendChild(h);
+  box.insertAdjacentHTML('beforeend', '<p class="note">No mapa, toque em uma bolinha (parada) para subir ou descer nela. Azul: parada no trajeto da linha. Cinza: outra parada perto. Falta uma parada? Use "+ Parada que falta".</p>');
+  let sel = null;
+  list.slice(0, shown).forEach(x => {
+    const el = card(x); box.appendChild(el);
+    if (!sel || x.r.line === selLine) sel = sel && sel.keep ? sel : { x, el, keep: x.r.line === selLine };
+  });
+  if (list.length > shown) {
+    const b = document.createElement('button'); b.className = 'more'; b.type = 'button'; b.textContent = 'Mostrar mais linhas (' + (list.length - shown) + ')';
+    b.onclick = () => { shown += 6; plan(); };
+    box.appendChild(b);
+  }
+  if (!list.length) box.insertAdjacentHTML('beforeend', '<p class="empty">Não achei linhas perto desses dois pontos. Confira se os pinos estão no lugar certo.</p>');
+
+  const det = document.createElement('details');
+  det.innerHTML = '<summary>Paradas cadastradas perto de você e do destino</summary>';
+  for (const [kind, label, color] of [['o', 'Perto da origem', '#0d7c66'], ['d', 'Perto do destino', '#c4501b']]) {
+    const hh = document.createElement('h2'); hh.textContent = label; det.appendChild(hh);
+    const near = nearStops(S[kind].p, 4);
+    if (!near.length || near[0].d > 400) det.insertAdjacentHTML('beforeend', '<p class="note">O mapa tem poucas paradas cadastradas aqui. Por isso o programa também usa pontos aproximados sobre o trajeto das linhas.</p>');
+    for (const { s, d } of near) {
+      const el = document.createElement('div'); el.className = 'stop';
+      el.innerHTML = '<b>' + esc(stopLabel(s, false)) + '</b> · ' + fmt(d) + '<small>Linhas: ' + (s.lines.size ? esc([...s.lines].sort(lineSort).join(', ')) : 'nenhuma ligada a esta parada no mapa') + '</small>';
+      el.onclick = () => map.setView(s.p, 18);
+      det.appendChild(el);
+      L.circleMarker(s.p, { radius: 6, color, weight: 2, fillColor: '#fff', fillOpacity: 1 }).bindTooltip(stopLabel(s, false) + ' · ' + fmt(d)).addTo(nearLayer);
+    }
+  }
+  box.appendChild(det);
+  if (sel) show(sel.x, sel.el);
+}
+
+async function go() {
+  if (!ready) { pending = true; say('Ainda carregando as linhas. Assim que terminar, mostro o resultado.'); return; }
+  $('go').disabled = true;
+  try {
+    say('Procurando os dois endereços…');
+    const a = await resolve('o'); if (!a) return;
+    const b = await resolve('d'); if (!b) return;
+    over.clear(); selLine = null; shown = 6; plan(true);
+    say('Arraste os pinos "De" e "Para" no mapa se algum estiver fora do lugar.');
+  } catch (e) { say('Não consegui buscar o endereço (' + e.message + '). Use "Marcar no mapa".', true); }
+  finally { $('go').disabled = false; }
+}
+function maybePlan() { if (ready && S.o.p && S.d.p) { over.clear(); selLine = null; shown = 6; plan(true); } }
+$('go').onclick = go;
+for (const k of ['o', 'd']) { setupSuggest(k); $(k).addEventListener('keydown', e => { if (e.key === 'Enter' && !e.defaultPrevented) go(); }); }
+
+// ---------- Início ----------
+async function start(force) {
+  ready = false; $('go').disabled = true; $('go').textContent = 'Carregando linhas…';
+  try {
+    await loadRoutes();
+    let note = '';
+    try { await loadStops(force); } catch (e) { stops = store.get(CACHE_S, []); note = ' As paradas não carregaram; uso só as que já estão ligadas às rotas.'; }
+    const withStops = indexAll();
+    pois = store.get(CACHE_P, []) || []; pois2 = store.get(CACHE_P2, []) || []; buildIndex();
+    ready = true; $('go').disabled = false; $('go').textContent = 'Ver ônibus';
+    const datas = routes.map(r => r.atualizado).filter(Boolean).sort();
+    $('data').textContent = 'Dados oficiais da Semob: ' + new Set(routes.map(r => r.line)).size + ' linhas (trajetos de ' + (datas[0] || '?').slice(0, 4) + ' a ' + (datas[datas.length - 1] || '?').slice(0, 4) + ')' + (semTrajeto.length ? ', ' + semTrajeto.length + ' sem trajeto publicado' : '') + ' · ' + stopsById.size + ' paradas do OpenStreetMap.';
+    say('Pronto.' + note + ' Toque em "Ver ônibus".', !!note);
+    // Pontos de referência em segundo plano: a página já funciona enquanto isso.
+    renderHist();
+    loadPois(force).then(() => { buildIndex(); $('data').textContent += ' · ' + index.length + ' lugares para a busca.'; })
+      .catch(() => { buildIndex(); $('data').textContent += ' · Os pontos de referência não carregaram (busca por endereço continua funcionando).'; })
+      .then(() => loadPois2(force)).then(() => { buildIndex(); }).catch(() => {});
+    if (pending) { pending = false; go(); }
+  } catch (e) {
+    $('go').textContent = 'Tentar de novo'; $('go').disabled = false; $('go').onclick = () => { $('go').onclick = go; start(true); };
+    say('Não consegui carregar as linhas (' + e.message + ').', true);
+  }
+}
+$('refresh').onclick = () => start(true);
+
+// ---------- Instalar como app (PWA) ----------
+// Android/Chrome/Edge: o navegador avisa que dá para instalar e o botão chama a janela de instalação.
+// iPhone/iPad: o Safari não tem esse aviso; mostramos o passo a passo de "Adicionar à Tela de Início".
+const INST_KEY = 'jp-inst-x';
+let deferredInstall = null;
+const isStandalone = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent || '') || ((navigator.platform || '') === 'MacIntel' && (navigator.maxTouchPoints || 0) > 1);
+const instHidden = () => { const t = store.get(INST_KEY, 0); return t && Date.now() - t < 14 * 864e5; };   // some por 14 dias depois de fechado
+function showInstall(kind) {
+  if (isStandalone() || instHidden()) return;
+  if (kind === 'ios') { $('inst-txt').textContent = 'Instale no iPhone: no Safari, toque em Compartilhar (quadrado com seta) e depois em "Adicionar à Tela de Início".'; $('inst-go').hidden = true; }
+  else { $('inst-txt').textContent = 'Instale o Ônibus JP no seu aparelho para abrir como app, direto da tela inicial.'; $('inst-go').hidden = false; }
+  $('inst').hidden = false;
+}
+if (window.addEventListener) {
+  window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredInstall = e; showInstall('android'); });
+  window.addEventListener('appinstalled', () => { deferredInstall = null; $('inst').hidden = true; });
+}
+$('inst-go').onclick = async () => {
+  if (!deferredInstall) return;
+  deferredInstall.prompt();
+  try { await deferredInstall.userChoice; } catch (e) {}
+  deferredInstall = null; $('inst').hidden = true;
+};
+$('inst-x').onclick = () => { $('inst').hidden = true; store.set(INST_KEY, Date.now()); };
+if (web && isIOS()) showInstall('ios');
+// Service worker: deixa o app abrir mesmo sem internet. Só funciona em https (ou localhost).
+if (web && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+if (document.addEventListener) document.addEventListener('mousedown', e => { if (e.target && e.target.closest && !e.target.closest('.f')) closeSug(); });
+start(false);
+</script>
+</body>
+</html>
